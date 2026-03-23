@@ -10,3 +10,15 @@ dataset/
 *.jpg
 *.png
 *.pth
+# Ignore datasets
+data/
+seg_data/
+
+# Ignore model weights
+*.pth
+
+# Ignore Python cache
+__pycache__/
+
+# Ignore Mac system files
+.DS_Store
