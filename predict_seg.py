@@ -2,6 +2,7 @@ import torch
 from torchvision import transforms
 from PIL import Image
 import matplotlib.pyplot as plt
+import numpy as np
 
 from seg_model import UNet
 
@@ -25,7 +26,21 @@ transform = transforms.Compose([
 ])
 
 # ---- LOAD IMAGE ----
-image_path = "seg_data/images/image_0.jpg"   # change this
+import tkinter as tk
+from tkinter import filedialog
+
+root = tk.Tk()
+root.withdraw() # Hide the main window
+
+image_path = filedialog.askopenfilename(
+    title="Select a Fundus Image for Segmentation",
+    filetypes=[("Image Files", "*.jpg *.jpeg *.png")]
+)
+
+if not image_path:
+    print("No image selected! Exiting.")
+    exit()
+
 image = Image.open(image_path).convert("RGB")
 
 # ---- PREPROCESS ----
@@ -37,21 +52,36 @@ with torch.no_grad():
     mask = torch.sigmoid(mask)
     mask = (mask > 0.5).float()
 
-# ---- MOVE TO CPU FOR PLOTTING ----
-mask = mask.squeeze().cpu().numpy()
+# ---- MOVE TO CPU & RESIZE FOR PLOTTING ----
+mask = mask.squeeze(0).cpu().numpy()  # shape: (2, 256, 256)
+
+# Resize masks back to original image size
+from PIL import Image as PILImage
+disc_mask = np.array(PILImage.fromarray(mask[0]).resize((image.width, image.height)))
+cup_mask  = np.array(PILImage.fromarray(mask[1]).resize((image.width, image.height)))
 
 # ---- VISUALIZE ----
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(15, 5))
 
 # Original
-plt.subplot(1,2,1)
+plt.subplot(1, 3, 1)
 plt.imshow(image)
 plt.title("Original Image")
+plt.axis("off")
 
-# Overlay
-plt.subplot(1,2,2)
+# Disc overlay
+plt.subplot(1, 3, 2)
 plt.imshow(image)
-plt.imshow(mask, alpha=0.4)
-plt.title("Overlay (Segmentation)")
+plt.imshow(disc_mask, alpha=0.4, cmap="Blues")
+plt.title("Optic Disc Mask")
+plt.axis("off")
 
+# Cup overlay
+plt.subplot(1, 3, 3)
+plt.imshow(image)
+plt.imshow(cup_mask, alpha=0.4, cmap="Reds")
+plt.title("Optic Cup Mask")
+plt.axis("off")
+
+plt.tight_layout()
 plt.show()

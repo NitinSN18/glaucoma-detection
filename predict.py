@@ -17,51 +17,21 @@ else:
 
 print("Using device:", device)
 
-# ---- IMAGE PATH (cross-platform) ----
-# Priority:
-#   1. Command-line argument:  python predict.py path/to/image.jpg
-#   2. Auto-search inside  data/train  and  data/val  (any .jpg/.png)
-#   3. Any .jpg / .png sitting next to this script
+# ---- IMAGE PATH ----
+import tkinter as tk
+from tkinter import filedialog
 
-def find_test_image() -> Path:
-    """Return the path of a test image, searching common project locations."""
-    # 1. CLI argument
-    if len(sys.argv) > 1:
-        p = Path(sys.argv[1])
-        if p.exists():
-            return p
-        raise FileNotFoundError(f"Image specified on command line not found: {p}")
+root = tk.Tk()
+root.withdraw() # Hide the main window
 
-    script_dir = Path(__file__).resolve().parent
+image_path = filedialog.askopenfilename(
+    title="Select a Fundus Image for Classification",
+    filetypes=[("Image Files", "*.jpg *.jpeg *.png")]
+)
 
-    # 2. Search inside data/train and data/val sub-folders
-    search_roots = [
-        #script_dir / "data" / "train",
-        script_dir / "data" / "test",
-
-    ]
-    for root in search_roots:
-        if root.exists():
-            for ext in ("*.jpg", "*.jpeg", "*.png"):
-                matches = list(root.rglob(ext))
-                if matches:
-                    print(f"Auto-found test image: {matches[0]}")
-                    return matches[0]
-
-    # 3. Fallback: any image sitting next to the script
-    for ext in ("*.jpg", "*.jpeg", "*.png"):
-        matches = list(script_dir.glob(ext))
-        if matches:
-            print(f"Auto-found test image: {matches[0]}")
-            return matches[0]
-
-    raise FileNotFoundError(
-        "No test image found.\n"
-        "  • Pass the image path as an argument:  python predict.py path/to/image.jpg\n"
-        "  • Or place an image inside data/train, data/val, or the project folder."
-    )
-
-image_path = find_test_image()
+if not image_path:
+    print("No image selected. Exiting.")
+    sys.exit()
 
 # ---- TRANSFORM ----
 transform = transforms.Compose([

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class UNet(nn.Module):
-    def __init__(self):
+    def __init__(self, out_channels=2):
         super(UNet, self).__init__()
 
         # Encoder
@@ -32,7 +32,7 @@ class UNet(nn.Module):
             nn.ReLU()
         )
 
-        self.final = nn.Conv2d(64, 1, 1)
+        self.final = nn.Conv2d(64, out_channels, 1)  # 2 channels: disc + cup
 
     def forward(self, x):
         x1 = self.enc1(x)
