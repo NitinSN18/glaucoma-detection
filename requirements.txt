@@ -1,0 +1,6 @@
+torch
+torchvision
+efficientnet-pytorch
+pillow
+numpy
+matplotlib

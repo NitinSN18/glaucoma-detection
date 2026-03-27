@@ -2,147 +2,120 @@
 
 ## Overview
 
-This project focuses on detecting glaucoma using retinal fundus images through a combination of image processing and deep learning techniques. The system aims to assist in early diagnosis by analyzing structural changes in the optic nerve head.
+This project detects glaucoma from retinal fundus images using two complementary deep learning workflows:
 
-A key design consideration in this project is the separation between **segmentation** and **classification**, which significantly impacts model performance and interpretability.
+1. Image classification (`glaucoma` vs `normal`)
+2. Optic disc / optic cup segmentation
 
----
+The classification path gives a direct diagnostic label, while segmentation supports anatomical interpretability.
 
-## Core Idea
+## Implemented Pipelines
 
-### 1. Segmentation (Feature Isolation)
+### 1. Classification
 
-Segmentation is used to isolate critical regions of the eye:
+- Model: EfficientNet-B0 (PyTorch)
+- Training script: `train.py`
+- Inference script: `predict.py`
+- Classes: `glaucoma`, `normal`
 
-* Optic Disc (OD)
-* Optic Cup (OC)
+### 2. Segmentation
 
-Why this matters:
+- Model: U-Net (`UNet` in `seg_model.py`)
+- Training script: `train_seg.py`
+- Inference/visualization script: `predict_seg.py`
+- Outputs: two masks
+	- Channel 0: optic disc
+	- Channel 1: optic cup
 
-* Glaucoma is strongly related to the **Cup-to-Disc Ratio (CDR)**
-* Raw image classification may miss these structural relationships
-* Segmentation improves feature relevance and reduces noise
+## Project Structure (Current)
 
-Insight:
-A pipeline that explicitly segments OD and OC before classification is more **clinically meaningful** and often more accurate than end-to-end black-box models.
-
----
-
-### 2. Classification (Decision Making)
-
-After segmentation, the system classifies whether glaucoma is present.
-
-Two approaches:
-
-* Direct classification (image → label)
-* Feature-based classification (CDR → label)
-
-Better approach:
-
-* Use segmentation output as input to classification
-* Combine deep learning with domain-specific features (like CDR)
-
----
-
-## Pipeline Architecture
-
-1. Input retinal image
-2. Preprocessing (resize, normalization)
-3. Segmentation of optic disc and cup
-4. Feature extraction (CDR calculation)
-5. Classification model prediction
-6. Output result (Glaucoma / Normal)
-
----
-
-## Features
-
-* Retinal image preprocessing
-* Optic disc and cup segmentation
-* Glaucoma classification model
-* Modular pipeline design
-* Extendable for clinical datasets
-
----
+```
+glaucoma-project/
+├── train.py
+├── predict.py
+├── seg_model.py
+├── train_seg.py
+├── predict_seg.py
+├── split.py
+├── README.md
+├── best_model.pth
+├── last_model.pth
+├── model.pth
+├── seg_model.pth
+├── archive/
+│   └── Database/
+│       └── Images/
+├── data/
+│   ├── train/
+│   │   ├── glaucoma/
+│   │   └── normal/
+│   ├── val/
+│   │   ├── glaucoma/
+│   │   └── normal/
+│   └── test/
+└── seg_data/
+		├── images/
+		└── masks/
+```
 
 ## Tech Stack
 
-* Python
-* OpenCV
-* TensorFlow / Keras
-* NumPy
-* (Optional) Flask for interface
+- Python
+- PyTorch / TorchVision
+- EfficientNet (`efficientnet-pytorch`)
+- PIL
+- NumPy
+- Matplotlib
+- Tkinter (file picker UI for inference scripts)
 
----
+## Setup
 
-## Project Structure
+Install dependencies with:
 
-```
-glaucoma-detection/
-│── model/              # Trained models
-│── dataset/            # Input images
-│── src/                # Core logic
-│── templates/          # UI (if web app)
-│── static/             # CSS/JS
-│── main.py             # Entry point
-│── requirements.txt    # Dependencies
-```
-
----
-
-## Installation
-
-```
+```bash
 pip install -r requirements.txt
 ```
 
----
-
 ## Usage
 
+### Train classifier
+
+```bash
+python train.py
 ```
-python main.py
+
+### Run classifier on one image
+
+```bash
+python predict.py
 ```
 
-Provide an input retinal image and the system will output a prediction.
+### Train segmentation model
 
----
+```bash
+python train_seg.py
+```
 
-## Output
+### Run segmentation on one image
 
-* Glaucoma / Normal classification
-* (Optional) Confidence score
-* (Optional) Segmented regions visualization
+```bash
+python predict_seg.py
+```
 
----
+### Create train/val split for classification data
 
-## Key Insights
+```bash
+python split.py
+```
 
-* Segmentation improves interpretability and aligns with medical standards
-* Pure classification models can work but lack explainability
-* Hybrid models (segmentation + classification) provide the best balance
-* Feature engineering (CDR) still plays a critical role alongside deep learning
+## Notes
 
----
-
-## Limitations
-
-* Performance depends on dataset quality
-* Large models/datasets may not be included
-* Requires proper preprocessing for accurate results
-
----
+- `predict.py` and `predict_seg.py` open a file chooser dialog to select an input image.
+- Classification and segmentation are currently trained as separate workflows.
+- Segmentation masks are expected in PNG format with label convention used in `train_seg.py`.
 
 ## Future Improvements
 
-* Improve segmentation accuracy using U-Net variants
-* Add real-time detection interface
-* Integrate with IoT or medical devices
-* Deploy as web or mobile application
-
----
-
-## Team
-
-* N$N
-* Avinash Reddy Banuri
+- Add a unified pipeline that derives CDR from segmentation and feeds a final classifier.
+- Add evaluation scripts (AUC, sensitivity, specificity, Dice/IoU).
+- Add model checkpoint/version metadata.
