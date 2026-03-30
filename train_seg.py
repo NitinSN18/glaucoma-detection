@@ -75,8 +75,11 @@ class SegDataset(Dataset):
         mpath = os.path.join(self.mask_dir, mname)
 
         mask = Image.open(mpath).convert("L")
-        # Use NEAREST to avoid interpolation corrupting discrete label values
-        mask = mask.resize((256, 256), resample=Image.NEAREST)
+        # Use NEAREST to avoid interpolation corrupting discrete label values.
+        # Image.Resampling.NEAREST is required for Pillow >= 10.0; the old
+        # Image.NEAREST constant was removed in that release.
+        _nearest = getattr(Image, "Resampling", Image).NEAREST
+        mask = mask.resize((256, 256), resample=_nearest)
         mask_np = np.array(mask)
 
         disc = (mask_np == 255).astype(np.float32)

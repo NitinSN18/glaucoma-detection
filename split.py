@@ -38,7 +38,10 @@ if not SOURCE_DIR.exists():
 
 for split in ("train", "val", "test"):
     for cls in ("glaucoma", "normal"):
-        (DATA_DIR / split / cls).mkdir(parents=True, exist_ok=True)
+        d = DATA_DIR / split / cls
+        if d.exists():
+            shutil.rmtree(d)
+        d.mkdir(parents=True)
 
 # ---- COLLECT FILES ----
 files = [

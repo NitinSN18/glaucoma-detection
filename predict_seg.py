@@ -44,7 +44,7 @@ if not possible_paths:
 
 model_path = possible_paths[0]
 model = UNet(out_channels=2)
-model.load_state_dict(torch.load(str(model_path), map_location=device))
+model.load_state_dict(torch.load(str(model_path), map_location=device, weights_only=True))
 model = model.to(device)
 model.eval()
 print("Loaded model from:", model_path)
