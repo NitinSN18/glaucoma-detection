@@ -1,1 +1,292 @@
-{"metadata":{"kernelspec":{"language":"python","display_name":"Python 3","name":"python3"},"language_info":{"name":"python","version":"3.12.12","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kaggle":{"accelerator":"nvidiaTeslaT4","dataSources":[{"sourceType":"datasetVersion","sourceId":15400111,"datasetId":9851748,"databundleVersionId":16314961},{"sourceType":"datasetVersion","sourceId":15333944,"datasetId":9807921,"databundleVersionId":16241860},{"sourceType":"datasetVersion","sourceId":15406516,"datasetId":9855794,"databundleVersionId":16322210}],"dockerImageVersionId":31328,"isInternetEnabled":true,"language":"python","sourceType":"notebook","isGpuEnabled":true}},"nbformat_minor":4,"nbformat":4,"cells":[{"cell_type":"markdown","source":"**Train.py**\n","metadata":{}},{"cell_type":"code","source":"import os\nimport sys\nimport torch\nimport torch.nn as nn\nimport torch.optim as optim\nfrom torchvision import datasets, transforms\nfrom torch.utils.data import DataLoader\nfrom pathlib import Path\n\n# ---- FIX: AUTO-INSTALL EfficientNet ----\ntry:\n    from efficientnet_pytorch import EfficientNet\nexcept ModuleNotFoundError:\n    print(\"Installing efficientnet_pytorch...\")\n    os.system(\"pip install efficientnet_pytorch\")\n    from efficientnet_pytorch import EfficientNet\n\n\n# ---- PATH HANDLING (Kaggle + Local) ----\nif Path(\"/kaggle/input\").exists():\n    print(\"Running in Kaggle\")\n\n    base_path = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data\"\n\n    train_path = os.path.join(base_path, \"train\")\n    val_path   = os.path.join(base_path, \"val\")\n\nelse:\n    print(\"Running locally\")\n\n    train_path = \"data/train\"\n    val_path   = \"data/val\"\n\n\n# ---- CHECK PATH ----\nprint(\"Train path:\", train_path)\nprint(\"Val path:\", val_path)\nprint(\"Train exists:\", os.path.exists(train_path))\nprint(\"Val exists:\", os.path.exists(val_path))\n\nif not os.path.exists(train_path) or not os.path.exists(val_path):\n    raise FileNotFoundError(\"Dataset path incorrect\")\n\n\n# ---- TRANSFORMS ----\ntransform = transforms.Compose([\n    transforms.Resize((224, 224)),\n    transforms.RandomHorizontalFlip(),\n    transforms.RandomRotation(15),\n    transforms.ColorJitter(brightness=0.3, contrast=0.3),\n    transforms.ToTensor(),\n    transforms.Normalize(\n        [0.485, 0.456, 0.406],\n        [0.229, 0.224, 0.225]\n    )\n])\n\n\n# ---- DATASET ----\ntrain_data = datasets.ImageFolder(train_path, transform=transform)\nval_data   = datasets.ImageFolder(val_path, transform=transform)\n\nprint(\"Training images:\", len(train_data))\nprint(\"Validation images:\", len(val_data))\nprint(\"Classes:\", train_data.classes)\n\ntrain_loader = DataLoader(train_data, batch_size=8, shuffle=True)\nval_loader   = DataLoader(val_data, batch_size=8)\n\n\n# ---- MODEL ----\nprint(\"Loading model...\")\nmodel = EfficientNet.from_pretrained('efficientnet-b4')\nmodel._fc = nn.Linear(model._fc.in_features, 2)\n\n\n# ---- DEVICE ----\nif torch.cuda.is_available():\n    device = torch.device(\"cuda\")\nelif torch.backends.mps.is_available():\n    device = torch.device(\"mps\")\nelse:\n    device = torch.device(\"cpu\")\n\nmodel = model.to(device)\nprint(\"Using device:\", device)\n\n\n# ---- LOSS + OPTIMIZER ----\ncriterion = nn.CrossEntropyLoss()\noptimizer = optim.Adam(model.parameters(), lr=1e-4)\n\n\n# ---- TRAINING ----\nepochs = 10\nbest_acc = 0.0\n\nprint(\"Starting training...\")\n\nfor epoch in range(epochs):\n    print(f\"\\n--- Epoch {epoch+1} ---\")\n\n    model.train()\n    running_loss = 0.0\n\n    for images, labels in train_loader:\n        images = images.to(device)\n        labels = labels.to(device)\n\n        optimizer.zero_grad()\n        outputs = model(images)\n        loss = criterion(outputs, labels)\n\n        loss.backward()\n        optimizer.step()\n\n        running_loss += loss.item()\n\n    print(f\"Training Loss: {running_loss / len(train_loader):.4f}\")\n\n    # ---- VALIDATION ----\n    model.eval()\n    correct = 0\n    total = 0\n\n    with torch.no_grad():\n        for images, labels in val_loader:\n            images = images.to(device)\n            labels = labels.to(device)\n\n            outputs = model(images)\n            _, predicted = torch.max(outputs, 1)\n\n            total += labels.size(0)\n            correct += (predicted == labels).sum().item()\n\n    accuracy = 100 * correct / total\n    print(f\"Validation Accuracy: {accuracy:.2f}%\")\n\n    if accuracy > best_acc:\n        best_acc = accuracy\n        torch.save(model.state_dict(), \"best_model.pth\")\n        print(\"Model saved\")\n\nprint(\"Training complete\")","metadata":{"_uuid":"2697ad9d-00b6-4f38-80d2-d297b6cc84a1","_cell_guid":"39acdd79-43c5-430f-8220-159efa86b92c","trusted":true,"execution":{"iopub.status.busy":"2026-03-30T03:57:19.094757Z","iopub.execute_input":"2026-03-30T03:57:19.095374Z"}},"outputs":[{"name":"stdout","text":"Installing efficientnet_pytorch...\nCollecting efficientnet_pytorch\n  Downloading efficientnet_pytorch-0.7.1.tar.gz (21 kB)\n  Preparing metadata (setup.py): started\n  Preparing metadata (setup.py): finished with status 'done'\nRequirement already satisfied: torch in /usr/local/lib/python3.12/dist-packages (from efficientnet_pytorch) (2.10.0+cu128)\nRequirement already satisfied: filelock in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.24.3)\nRequirement already satisfied: typing-extensions>=4.10.0 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (4.15.0)\nRequirement already satisfied: setuptools in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (75.2.0)\nRequirement already satisfied: sympy>=1.13.3 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (1.14.0)\nRequirement already satisfied: networkx>=2.5.1 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.6.1)\nRequirement already satisfied: jinja2 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.1.6)\nRequirement already satisfied: fsspec>=0.8.5 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (2026.2.0)\nRequirement already satisfied: cuda-bindings==12.9.4 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.9.4)\nRequirement already satisfied: nvidia-cuda-nvrtc-cu12==12.8.93 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.93)\nRequirement already satisfied: nvidia-cuda-runtime-cu12==12.8.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.90)\nRequirement already satisfied: nvidia-cuda-cupti-cu12==12.8.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.90)\nRequirement already satisfied: nvidia-cudnn-cu12==9.10.2.21 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (9.10.2.21)\nRequirement already satisfied: nvidia-cublas-cu12==12.8.4.1 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.4.1)\nRequirement already satisfied: nvidia-cufft-cu12==11.3.3.83 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (11.3.3.83)\nRequirement already satisfied: nvidia-curand-cu12==10.3.9.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (10.3.9.90)\nRequirement already satisfied: nvidia-cusolver-cu12==11.7.3.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (11.7.3.90)\nRequirement already satisfied: nvidia-cusparse-cu12==12.5.8.93 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.5.8.93)\nRequirement already satisfied: nvidia-cusparselt-cu12==0.7.1 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (0.7.1)\nRequirement already satisfied: nvidia-nccl-cu12==2.27.5 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (2.27.5)\nRequirement already satisfied: nvidia-nvshmem-cu12==3.4.5 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.4.5)\nRequirement already satisfied: nvidia-nvtx-cu12==12.8.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.90)\nRequirement already satisfied: nvidia-nvjitlink-cu12==12.8.93 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.93)\nRequirement already satisfied: nvidia-cufile-cu12==1.13.1.3 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (1.13.1.3)\nRequirement already satisfied: triton==3.6.0 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.6.0)\nRequirement already satisfied: cuda-pathfinder~=1.1 in /usr/local/lib/python3.12/dist-packages (from cuda-bindings==12.9.4->torch->efficientnet_pytorch) (1.3.5)\nRequirement already satisfied: mpmath<1.4,>=1.1.0 in /usr/local/lib/python3.12/dist-packages (from sympy>=1.13.3->torch->efficientnet_pytorch) (1.3.0)\nRequirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.12/dist-packages (from jinja2->torch->efficientnet_pytorch) (3.0.3)\nBuilding wheels for collected packages: efficientnet_pytorch\n  Building wheel for efficientnet_pytorch (setup.py): started\n  Building wheel for efficientnet_pytorch (setup.py): finished with status 'done'\n  Created wheel for efficientnet_pytorch: filename=efficientnet_pytorch-0.7.1-py3-none-any.whl size=16426 sha256=bfaa9b2e2ef81086687c1cdc1d8cc358a04d5db3155c6507e3e54135bd0d27bb\n  Stored in directory: /root/.cache/pip/wheels/9c/3f/43/e6271c7026fe08c185da2be23c98c8e87477d3db63f41f32ad\nSuccessfully built efficientnet_pytorch\nInstalling collected packages: efficientnet_pytorch\nSuccessfully installed efficientnet_pytorch-0.7.1\nRunning in Kaggle\nTrain path: /kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/train\nVal path: /kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/val\nTrain exists: True\nVal exists: True\nTraining images: 2362\nValidation images: 141\nClasses: ['glaucoma', 'normal']\nLoading model...\nDownloading: \"https://github.com/lukemelas/EfficientNet-PyTorch/releases/download/1.0/efficientnet-b4-6ed6700e.pth\" to /root/.cache/torch/hub/checkpoints/efficientnet-b4-6ed6700e.pth\n","output_type":"stream"},{"name":"stderr","text":"100%|██████████| 74.4M/74.4M [00:00<00:00, 173MB/s]\n","output_type":"stream"},{"name":"stdout","text":"Loaded pretrained weights for efficientnet-b4\nUsing device: cuda\nStarting training...\n\n--- Epoch 1 ---\n","output_type":"stream"}],"execution_count":null},{"cell_type":"markdown","source":"**Predict.py**","metadata":{}},{"cell_type":"code","source":"from efficientnet_pytorch import EfficientNet\n\nimport sys\nimport torch\nimport torch.nn as nn\nfrom torchvision import transforms\nfrom PIL import Image\nfrom pathlib import Path\nimport os\n\n# ---- DEVICE ----\nif torch.cuda.is_available():\n    device = torch.device(\"cuda\")\nelif torch.backends.mps.is_available():\n    device = torch.device(\"mps\")\nelse:\n    device = torch.device(\"cpu\")\n\nprint(\"Using device:\", device)\n\n# ---- TRANSFORM ----\ntransform = transforms.Compose([\n    transforms.Resize((224, 224)),\n    transforms.ToTensor(),\n    transforms.Normalize(\n        [0.485, 0.456, 0.406],\n        [0.229, 0.224, 0.225]\n    )\n])\n\n# ---- MODEL ----\nmodel = EfficientNet.from_pretrained('efficientnet-b4')\nmodel._fc = nn.Linear(model._fc.in_features, 2)\n\n# ---- LOAD MODEL (Kaggle + Local safe) ----\npossible_paths = []\n\n# Kaggle\nkaggle_path = Path(\"/kaggle/working/best_model.pth\")\nif kaggle_path.exists():\n    possible_paths.append(kaggle_path)\n\n# Current working dir\ncwd_path = Path(os.getcwd()) / \"best_model.pth\"\nif cwd_path.exists():\n    possible_paths.append(cwd_path)\n\n# Script dir\ntry:\n    script_path = Path(__file__).resolve().parent / \"best_model.pth\"\n    if script_path.exists():\n        possible_paths.append(script_path)\nexcept:\n    pass\n\nif not possible_paths:\n    raise FileNotFoundError(\"best_model.pth not found\")\n\nmodel_path = possible_paths[0]\n\nmodel.load_state_dict(torch.load(str(model_path), map_location=device))\nmodel = model.to(device)\nmodel.eval()\n\nprint(\"Loaded model from:\", model_path)\n\n# ---- IMAGE INPUT MODE ----\nimage_paths = []\nvalid_ext = (\".jpg\", \".jpeg\", \".png\")\n\n# ---- CLI (FILTERED to avoid Jupyter args) ----\nif len(sys.argv) > 1:\n    image_paths = [\n        p for p in sys.argv[1:]\n        if p.lower().endswith(valid_ext) and os.path.exists(p)\n    ]\n\n# ---- Kaggle AUTO (if no valid CLI input) ----\nif not image_paths and Path(\"/kaggle/input\").exists():\n    print(\"Running in Kaggle mode\")\n\n    base = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/test\"\n\n    image_paths = [\n        os.path.join(base, f)\n        for f in os.listdir(base)\n        if f.lower().endswith(valid_ext)\n    ]\n\n# ---- Local GUI fallback ----\nif not image_paths:\n    try:\n        import tkinter as tk\n        from tkinter import filedialog\n\n        root = tk.Tk()\n        root.withdraw()\n\n        path = filedialog.askopenfilename(\n            title=\"Select Fundus Image\",\n            filetypes=[(\"Image Files\", \"*.jpg *.jpeg *.png\")]\n        )\n\n        if not path:\n            print(\"No image selected\")\n            sys.exit()\n\n        image_paths = [path]\n\n    except Exception:\n        print(\"No valid input. Use: python predict.py <image_path>\")\n        sys.exit()\n\n# ---- PREDICTION ----\nclasses = [\"glaucoma\", \"normal\"]\n\nfor image_path in image_paths:\n    try:\n        image = Image.open(image_path).convert(\"RGB\")\n        image_tensor = transform(image).unsqueeze(0).to(device)\n\n        with torch.no_grad():\n            outputs = model(image_tensor)\n            probs = torch.softmax(outputs, dim=1)\n            confidence, pred = torch.max(probs, 1)\n\n        print(\"\\nImage     :\", image_path)\n        print(\"Prediction:\", classes[pred.item()])\n        print(\"Confidence:\", f\"{confidence.item():.4f}\")\n\n    except Exception as e:\n        print(f\"Error processing {image_path}: {e}\")","metadata":{"trusted":true},"outputs":[],"execution_count":null},{"cell_type":"markdown","source":"**Segementation Model**","metadata":{}},{"cell_type":"code","source":"import torch\nimport torch.nn as nn\nfrom torch.utils.data import DataLoader, Dataset\nfrom torchvision import transforms\nfrom PIL import Image\nimport numpy as np\nimport os\n\n# ---- UNET ----\nclass UNet(nn.Module):\n    def __init__(self, out_channels=2):\n        super().__init__()\n        self.enc1 = nn.Sequential(\n            nn.Conv2d(3,64,3,padding=1), nn.ReLU(),\n            nn.Conv2d(64,64,3,padding=1), nn.ReLU()\n        )\n        self.pool = nn.MaxPool2d(2)\n        self.enc2 = nn.Sequential(\n            nn.Conv2d(64,128,3,padding=1), nn.ReLU(),\n            nn.Conv2d(128,128,3,padding=1), nn.ReLU()\n        )\n        self.up = nn.ConvTranspose2d(128,64,2,2)\n        self.dec = nn.Sequential(\n            nn.Conv2d(128,64,3,padding=1), nn.ReLU(),\n            nn.Conv2d(64,64,3,padding=1), nn.ReLU()\n        )\n        self.final = nn.Conv2d(64,out_channels,1)\n\n    def forward(self,x):\n        x1=self.enc1(x)\n        x2=self.enc2(self.pool(x1))\n        x3=self.up(x2)\n        x4=torch.cat([x3,x1],1)\n        return self.final(self.dec(x4))\n\n# ---- DEVICE ----\ndevice = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\nprint(\"Using:\", device)\n\n# ---- PATHS ----\nimg_dir  = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/seg_data/seg_data/images\"\nmask_dir = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/seg_data/seg_data/masks\"\n\n# ---- DATASET ----\nclass SegDataset(Dataset):\n    def __init__(self, img_dir, mask_dir):\n        self.imgs = sorted(os.listdir(img_dir))\n        self.img_dir = img_dir\n        self.mask_dir = mask_dir\n\n        self.img_tf = transforms.Compose([\n            transforms.Resize((256,256)),\n            transforms.RandomHorizontalFlip(),\n            transforms.RandomRotation(10),\n            transforms.ToTensor(),\n            transforms.Normalize([0.5]*3,[0.5]*3)\n        ])\n\n    def __len__(self):\n        return len(self.imgs)\n\n    def __getitem__(self, idx):\n        name = self.imgs[idx]\n\n        # ---- IMAGE ----\n        img = Image.open(os.path.join(self.img_dir,name)).convert(\"RGB\")\n        img = self.img_tf(img)\n\n        # ---- MASK (CRITICAL FIX) ----\n        mname = os.path.splitext(name)[0] + \".png\"\n        mpath = os.path.join(self.mask_dir, mname)\n\n        mask = Image.open(mpath).convert(\"L\")\n\n        # RESIZE using NEAREST (NO interpolation corruption)\n        mask = mask.resize((256,256), resample=Image.NEAREST)\n\n        mask_np = np.array(mask)\n\n        # ---- DEBUG CHECK (run once, then remove) ----\n        # print(np.unique(mask_np))\n\n        # ---- EXACT LABEL EXTRACTION ----\n        disc = (mask_np == 255).astype(np.float32)\n        cup  = (mask_np == 128).astype(np.float32)\n\n        mask = torch.tensor(np.stack([disc, cup], axis=0))\n\n        return img, mask\n\n# ---- DATA ----\ndataset = SegDataset(img_dir, mask_dir)\nloader = DataLoader(dataset, batch_size=8, shuffle=True)\n\nprint(\"Samples:\", len(dataset))\n\n# ---- MODEL ----\nmodel = UNet(out_channels=2).to(device)\n\n# ---- LOSS ----\nbce = nn.BCEWithLogitsLoss()\n\ndef dice_loss(pred, target):\n    pred = torch.sigmoid(pred)\n    inter = (pred * target).sum()\n    return 1 - (2*inter + 1)/(pred.sum() + target.sum() + 1)\n\ndef loss_fn(pred, target):\n    return bce(pred, target) + dice_loss(pred, target)\n\nopt = torch.optim.Adam(model.parameters(), lr=1e-4)\n\n# ---- TRAIN ----\nepochs = 25\n\nfor e in range(epochs):\n    model.train()\n    total = 0\n\n    for imgs, masks in loader:\n        imgs = imgs.to(device)\n        masks = masks.to(device)\n\n        out = model(imgs)\n        loss = loss_fn(out, masks)\n\n        opt.zero_grad()\n        loss.backward()\n        opt.step()\n\n        total += loss.item()\n\n    print(f\"Epoch {e+1}: {total/len(loader):.4f}\")\n\n# ---- SAVE ----\ntorch.save(model.state_dict(), \"/kaggle/working/seg_model.pth\")\nprint(\"Saved seg_model.pth\")","metadata":{"trusted":true},"outputs":[],"execution_count":null},{"cell_type":"markdown","source":"**Segmentation_predict**","metadata":{}},{"cell_type":"code","source":"import torch\nimport torch.nn as nn\nfrom torchvision import transforms\nfrom PIL import Image\nimport matplotlib.pyplot as plt\nimport numpy as np\nfrom pathlib import Path\n\n# ---- UNET INLINE ----\nclass UNet(nn.Module):\n    def __init__(self, out_channels=2):\n        super().__init__()\n        self.enc1 = nn.Sequential(\n            nn.Conv2d(3,64,3,padding=1), nn.ReLU(),\n            nn.Conv2d(64,64,3,padding=1), nn.ReLU()\n        )\n        self.pool = nn.MaxPool2d(2)\n        self.enc2 = nn.Sequential(\n            nn.Conv2d(64,128,3,padding=1), nn.ReLU(),\n            nn.Conv2d(128,128,3,padding=1), nn.ReLU()\n        )\n        self.up = nn.ConvTranspose2d(128,64,2,2)\n        self.dec = nn.Sequential(\n            nn.Conv2d(128,64,3,padding=1), nn.ReLU(),\n            nn.Conv2d(64,64,3,padding=1), nn.ReLU()\n        )\n        self.final = nn.Conv2d(64,out_channels,1)\n\n    def forward(self,x):\n        x1=self.enc1(x)\n        x2=self.enc2(self.pool(x1))\n        x3=self.up(x2)\n        x4=torch.cat([x3,x1],1)\n        return self.final(self.dec(x4))\n\ndevice = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\n\nmodel = UNet()\nmodel.load_state_dict(torch.load(\"seg_model.pth\", map_location=device))\nmodel.to(device).eval()\n\ntransform = transforms.Compose([\n    transforms.Resize((256,256)),\n    transforms.ToTensor(),\n    transforms.Normalize([0.5]*3,[0.5]*3)\n])\n\n# ---- INPUT ----\nif Path(\"/kaggle/input\").exists():\n    img_path = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/test/t2.jpg\"\nelse:\n    import tkinter as tk\n    from tkinter import filedialog\n    root=tk.Tk(); root.withdraw()\n    img_path=filedialog.askopenfilename()\n\nimg = Image.open(img_path).convert(\"RGB\")\nx = transform(img).unsqueeze(0).to(device)\n\n# ---- PREDICT ----\nwith torch.no_grad():\n    out = torch.sigmoid(model(x))\n    out = (out > 0.3).float()\n\nmask = out.squeeze().cpu().numpy()\n\ndisc = (mask[0]*255).astype(np.uint8)\ncup  = (mask[1]*255).astype(np.uint8)\n\ndisc = np.array(Image.fromarray(disc).resize((img.width,img.height)))\ncup  = np.array(Image.fromarray(cup).resize((img.width,img.height)))\n\n# ---- DISPLAY ----\nplt.figure(figsize=(15,5))\n\nplt.subplot(1,3,1)\nplt.imshow(img); plt.title(\"Original\"); plt.axis(\"off\")\n\nplt.subplot(1,3,2)\nplt.imshow(img); plt.imshow(disc,alpha=0.4,cmap=\"Blues\")\nplt.title(\"Disc\"); plt.axis(\"off\")\n\nplt.subplot(1,3,3)\nplt.imshow(img); plt.imshow(cup,alpha=0.4,cmap=\"Reds\")\nplt.title(\"Cup\"); plt.axis(\"off\")\n\nplt.show()","metadata":{"trusted":true},"outputs":[],"execution_count":null},{"cell_type":"code","source":"import os\n\nfor root, dirs, files in os.walk(\"/kaggle/input\"):\n    print(root)\n    ","metadata":{"trusted":true},"outputs":[],"execution_count":null},{"cell_type":"code","source":"import os\n\nmask_dir = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/seg_data/seg_data/masks\"\n\nprint(os.listdir(mask_dir)[:10])","metadata":{"trusted":true},"outputs":[],"execution_count":null}]}
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+from typing import Iterable
+
+import torch
+import torch.nn as nn
+from PIL import Image
+from torchvision import transforms
+
+try:
+    from efficientnet_pytorch import EfficientNet
+except ModuleNotFoundError as exc:
+    raise ModuleNotFoundError(
+        "Missing dependency 'efficientnet_pytorch'. Install it with: pip install efficientnet_pytorch"
+    ) from exc
+
+
+CLASSES = ["glaucoma", "normal"]
+VALID_EXT = {".jpg", ".jpeg", ".png"}
+
+
+def infer_efficientnet_name(state_dict: dict[str, torch.Tensor]) -> str:
+    # Infer the model family from classifier input width in checkpoint.
+    if "_fc.weight" in state_dict and state_dict["_fc.weight"].ndim == 2:
+        in_features = int(state_dict["_fc.weight"].shape[1])
+        by_fc_width = {
+            1280: "efficientnet-b0",
+            1408: "efficientnet-b2",
+            1536: "efficientnet-b3",
+            1792: "efficientnet-b4",
+            2048: "efficientnet-b5",
+            2304: "efficientnet-b6",
+            2560: "efficientnet-b7",
+        }
+        if in_features in by_fc_width:
+            return by_fc_width[in_features]
+
+    # Fallback if classifier width is unavailable: use stem width.
+    if "_conv_stem.weight" in state_dict and state_dict["_conv_stem.weight"].ndim == 4:
+        stem_out = int(state_dict["_conv_stem.weight"].shape[0])
+        if stem_out == 32:
+            return "efficientnet-b0"
+        if stem_out == 48:
+            return "efficientnet-b4"
+
+    return "efficientnet-b4"
+
+
+def get_device() -> torch.device:
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
+
+
+def build_model(
+    device: torch.device,
+    model_path: Path | None = None,
+    model_arch: str = "auto",
+) -> nn.Module:
+    model_path = model_path or resolve_model_path()
+    state_dict = torch.load(str(model_path), map_location=device)
+
+    selected_arch = infer_efficientnet_name(state_dict) if model_arch == "auto" else model_arch
+
+    # Use from_name to avoid downloading pretrained weights at inference startup.
+    model = EfficientNet.from_name(selected_arch)
+    model._fc = nn.Linear(model._fc.in_features, 2)
+    model.load_state_dict(state_dict)
+    model.to(device)
+    model.eval()
+
+    print(f"Using device: {device}")
+    print(f"Model arch: {selected_arch}")
+    print(f"Loaded model from: {model_path}")
+    return model
+
+
+def resolve_model_path(use_picker: bool = False) -> Path:
+    candidates = [
+        Path("best_model.pth"),
+        Path(__file__).resolve().parent / "best_model.pth",
+        Path("/kaggle/working/best_model.pth"),
+    ]
+
+    for path in candidates:
+        if path.exists():
+            return path
+
+    if use_picker:
+        selected = pick_model_file()
+        if selected is not None:
+            return selected
+
+    raise FileNotFoundError(
+        "best_model.pth not found. Place it in the project root or pass --model."
+    )
+
+
+def resolve_image_paths(cli_paths: Iterable[str], use_picker: bool) -> list[Path]:
+    resolved: list[Path] = []
+
+    for p in cli_paths:
+        path = Path(p).expanduser().resolve()
+        if path.is_file() and path.suffix.lower() in VALID_EXT:
+            resolved.append(path)
+
+    if resolved:
+        return resolved
+
+    if Path("/kaggle/input").exists():
+        kaggle_test = Path(
+            "/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/test"
+        )
+        if kaggle_test.exists():
+            return sorted(
+                [
+                    p
+                    for p in kaggle_test.iterdir()
+                    if p.is_file() and p.suffix.lower() in VALID_EXT
+                ]
+            )
+
+    if use_picker:
+        return pick_images()
+
+    return []
+
+
+def _create_hidden_tk_root():
+    try:
+        import tkinter as tk
+    except Exception:
+        return None, None
+
+    root = tk.Tk()
+    root.withdraw()
+    return tk, root
+
+
+def pick_images() -> list[Path]:
+    tk, root = _create_hidden_tk_root()
+    if root is None:
+        return []
+
+    from tkinter import filedialog
+
+    chosen = filedialog.askopenfilenames(
+        title="Select Fundus Image(s)",
+        filetypes=[("Image Files", "*.jpg *.jpeg *.png")],
+    )
+    root.destroy()
+
+    if not chosen:
+        return []
+
+    image_paths: list[Path] = []
+    for p in chosen:
+        path = Path(p).expanduser().resolve()
+        if path.is_file() and path.suffix.lower() in VALID_EXT:
+            image_paths.append(path)
+
+    return image_paths
+
+
+def pick_model_file() -> Path | None:
+    _, root = _create_hidden_tk_root()
+    if root is None:
+        return None
+
+    from tkinter import filedialog
+
+    chosen = filedialog.askopenfilename(
+        title="Select Model File (.pth)",
+        filetypes=[("PyTorch Model", "*.pth"), ("All Files", "*.*")],
+    )
+    root.destroy()
+
+    if not chosen:
+        return None
+
+    return Path(chosen).expanduser().resolve()
+
+
+def predict_one(model: nn.Module, image_path: Path, device: torch.device) -> tuple[str, float]:
+    transform = transforms.Compose(
+        [
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ]
+    )
+
+    image = Image.open(image_path).convert("RGB")
+    tensor = transform(image).unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        logits = model(tensor)
+        probs = torch.softmax(logits, dim=1)
+        confidence, pred_idx = torch.max(probs, dim=1)
+
+    return CLASSES[pred_idx.item()], float(confidence.item())
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Glaucoma classifier inference")
+    parser.add_argument("images", nargs="*", help="One or more image paths")
+    parser.add_argument(
+        "--no-picker",
+        action="store_true",
+        help="Disable macOS file picker fallback and require CLI image path(s)",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Optional explicit path to model .pth file",
+    )
+    parser.add_argument(
+        "--pick-model",
+        action="store_true",
+        help="Open file picker to choose model .pth if default model is missing",
+    )
+    parser.add_argument(
+        "--model-arch",
+        default="auto",
+        choices=[
+            "auto",
+            "efficientnet-b0",
+            "efficientnet-b1",
+            "efficientnet-b2",
+            "efficientnet-b3",
+            "efficientnet-b4",
+            "efficientnet-b5",
+            "efficientnet-b6",
+            "efficientnet-b7",
+        ],
+        help="Model architecture to build before loading checkpoint",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    device = get_device()
+
+    if args.model:
+        model_path = Path(args.model).expanduser().resolve()
+        if not model_path.exists():
+            print(f"Model file not found: {model_path}")
+            return 1
+    else:
+        try:
+            model_path = resolve_model_path(use_picker=args.pick_model)
+        except FileNotFoundError:
+            if not args.pick_model:
+                print("Default model not found. Re-run with --pick-model to choose a .pth file.")
+                return 1
+            raise
+
+    try:
+        model = build_model(device, model_path=model_path, model_arch=args.model_arch)
+    except RuntimeError as exc:
+        print(f"Failed to load checkpoint: {exc}")
+        print("Try overriding architecture, for example: --model-arch efficientnet-b0")
+        return 1
+
+    image_paths = resolve_image_paths(args.images, use_picker=not args.no_picker)
+    if not image_paths:
+        print("No valid images provided.")
+        print("Usage: python predict.py <image_path1> [image_path2 ...]")
+        print("Tip: run without --no-picker to choose a file in a GUI dialog on macOS.")
+        return 1
+
+    for image_path in image_paths:
+        try:
+            label, confidence = predict_one(model, image_path, device)
+            print(f"\nImage     : {image_path}")
+            print(f"Prediction: {label}")
+            print(f"Confidence: {confidence:.4f}")
+        except Exception as exc:
+            print(f"Error processing {image_path}: {exc}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
