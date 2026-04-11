@@ -3,12 +3,30 @@ from torchvision import transforms
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
+import os
+try:
+    import cv2
+except ModuleNotFoundError as exc:
+    raise ModuleNotFoundError(
+        "OpenCV is not installed in the current Python environment. Activate the project virtualenv with: \n"
+        "  source .venv/bin/activate\n"
+        "Then rerun: python predict_seg.py\n"
+        "If you are setting up a fresh environment, install dependencies with: pip install -r requirements.txt"
+    ) from exc
 from seg_model import UNet
 
 # ---- LOAD MODEL ----
 model = UNet()
-model.load_state_dict(torch.load("seg_model.pth"))
+
+ckpt = torch.load("seg_model.pth", map_location=torch.device("cpu"))
+if isinstance(ckpt, dict):
+    if "state_dict" in ckpt:
+        ckpt = ckpt["state_dict"]
+    elif "model_state_dict" in ckpt:
+        ckpt = ckpt["model_state_dict"]
+    ckpt = {k.replace("module.", ""): v for k, v in ckpt.items()}
+
+model.load_state_dict(ckpt)
 model.eval()
 
 # ---- DEVICE ----
@@ -20,6 +38,7 @@ else:
 model.to(device)
 
 INPUT_SIZE = 256
+AGGRESSIVE_POST = os.getenv("SEG_AGGRESSIVE_POST", "0") == "1"
 
 def build_transform(size):
     return transforms.Compose([
@@ -201,6 +220,16 @@ def _mask_centroid(bin_img):
         h, w = bin_img.shape
         return w // 2, h // 2
     return int(xs.mean()), int(ys.mean())
+
+
+def mask_iou(mask_a, mask_b):
+    a = mask_a > 0
+    b = mask_b > 0
+    inter = np.logical_and(a, b).sum()
+    union = np.logical_or(a, b).sum()
+    if union == 0:
+        return 1.0
+    return float(inter) / float(union)
 
 
 def refine_disc_from_intensity(rgb_img, valid_mask, center_xy, base_disc):
@@ -415,6 +444,7 @@ image_np = np.array(image)
 # ---- ASK ROI MODE ----
 user_roi_mode = ask_roi_mode()
 print(f"[DEBUG] ROI mode selected: {user_roi_mode}")
+print(f"[DEBUG] Aggressive post-processing: {'on' if AGGRESSIVE_POST else 'off'}")
 
 # ---- FUNDUS ROI ----
 fundus_mask_full, mode_used = get_fundus_mask(image_np, roi_mode=user_roi_mode)
@@ -503,18 +533,35 @@ cup_mask_clean = np.where(disc_mask_clean > 0, cup_mask_clean, 0).astype(np.uint
 disc_mask = disc_mask_clean
 cup_mask = cup_mask_clean
 
-# Shape refinement pass for better anatomical disc/cup contours.
-disc_mask = refine_disc_from_intensity(image_np, valid_mask, (prior_x, prior_y), disc_mask)
-cup_mask = refine_cup_from_intensity(image_np, disc_mask, cup_mask)
-
-# If model output is tiny/empty on unseen image, use classical brightness fallback.
 fallback_used = False
-if np.sum(disc_mask > 0) < max(120, int(0.0004 * h * w)):
-    fb_disc, fb_cup = classical_disc_cup_fallback(image_np, valid_mask, (prior_x, prior_y))
-    if np.sum(fb_disc > 0) > np.sum(disc_mask > 0):
-        disc_mask = fb_disc
-        cup_mask = fb_cup
-        fallback_used = True
+if AGGRESSIVE_POST:
+    # Keep a conservative baseline in case aggressive refinement drifts away.
+    base_disc = disc_mask.copy()
+    base_cup = cup_mask.copy()
+
+    # Shape refinement pass for better anatomical disc/cup contours.
+    disc_mask = refine_disc_from_intensity(image_np, valid_mask, (prior_x, prior_y), disc_mask)
+    cup_mask = refine_cup_from_intensity(image_np, disc_mask, cup_mask)
+
+    # If model output is tiny/empty on unseen image, use classical brightness fallback.
+    if np.sum(disc_mask > 0) < max(120, int(0.0004 * h * w)):
+        fb_disc, fb_cup = classical_disc_cup_fallback(image_np, valid_mask, (prior_x, prior_y))
+        if np.sum(fb_disc > 0) > np.sum(disc_mask > 0):
+            disc_mask = fb_disc
+            cup_mask = fb_cup
+            fallback_used = True
+
+    # Guardrail: if aggressive result diverges too much from model-driven masks, revert.
+    disc_overlap = mask_iou(base_disc, disc_mask)
+    cup_overlap = mask_iou(base_cup, cup_mask)
+    if disc_overlap < 0.25 or cup_overlap < 0.15:
+        print(
+            f"[DEBUG] Reverting aggressive masks (low overlap) - "
+            f"disc IoU: {disc_overlap:.3f}, cup IoU: {cup_overlap:.3f}"
+        )
+        disc_mask = base_disc
+        cup_mask = base_cup
+        fallback_used = False
 
 # Final consistency: cup must be inside disc and should not exceed disc area.
 cup_mask = np.where(disc_mask > 0, cup_mask, 0).astype(np.uint8)

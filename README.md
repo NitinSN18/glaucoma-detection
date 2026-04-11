@@ -76,6 +76,14 @@ Install dependencies with:
 pip install -r requirements.txt
 ```
 
+If you are using the included virtual environment, activate it first:
+
+```bash
+source .venv/bin/activate
+```
+
+Then run the scripts with `python`, not the system `python3`, so the installed packages are available.
+
 ## Usage
 
 ### Train classifier
@@ -112,7 +120,11 @@ python split.py
 
 - `predict.py` and `predict_seg.py` open a file chooser dialog to select an input image.
 - Classification and segmentation are currently trained as separate workflows.
-- Segmentation masks are expected in PNG format with label convention used in `train_seg.py`.
+- Segmentation training now expects three folders with matching filenames:
+	- `/Users/avinash/Downloads/full-fundus`
+	- `/Users/avinash/Downloads/optic-cup`
+	- `/Users/avinash/Downloads/optic-disc`
+- Only exact filename triplets are used for training; unmatched full-fundus images are auto-skipped and reported at startup.
 
 ## Future Improvements
 
