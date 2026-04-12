@@ -98,3 +98,37 @@ class UNet(nn.Module):
         y1 = self.dec1(torch.cat([self.up1(y2), x1], dim=1))  # 256x256x64
 
         return self.final(y1)
+
+
+def create_segmentation_model(
+    arch="unet",
+    out_channels=2,
+    encoder_name="resnet34",
+    encoder_weights="imagenet",
+):
+    arch_norm = str(arch).strip().lower()
+
+    if arch_norm == "unet":
+        return UNet(out_channels=out_channels)
+
+    if arch_norm in {"deeplabv3+", "deeplabv3plus"}:
+        try:
+            import segmentation_models_pytorch as smp
+        except ModuleNotFoundError as exc:
+            raise ModuleNotFoundError(
+                "DeepLabV3+ requires segmentation-models-pytorch. "
+                "Install dependencies with: pip install -r requirements.txt"
+            ) from exc
+
+        return smp.DeepLabV3Plus(
+            encoder_name=encoder_name,
+            encoder_weights=encoder_weights,
+            in_channels=3,
+            classes=out_channels,
+            activation=None,
+        )
+
+    raise ValueError(
+        f"Unsupported segmentation architecture: {arch}. "
+        "Use one of: unet, deeplabv3plus"
+    )

@@ -13,12 +13,24 @@ except ModuleNotFoundError as exc:
         "Then rerun: python predict_seg.py\n"
         "If you are setting up a fresh environment, install dependencies with: pip install -r requirements.txt"
     ) from exc
-from seg_model import UNet
+from seg_model import create_segmentation_model
 
 # ---- LOAD MODEL ----
-model = UNet()
+SEG_MODEL_ARCH = os.getenv("SEG_MODEL_ARCH", "deeplabv3plus").strip().lower()
+SEG_MODEL_ENCODER = os.getenv("SEG_MODEL_ENCODER", "resnet34")
+SEG_MODEL_PATH = os.getenv(
+    "SEG_MODEL_PATH",
+    "seg_model.pth" if SEG_MODEL_ARCH == "unet" else f"seg_model_{SEG_MODEL_ARCH}.pth",
+)
 
-ckpt = torch.load("seg_model.pth", map_location=torch.device("cpu"))
+model = create_segmentation_model(
+    arch=SEG_MODEL_ARCH,
+    out_channels=2,
+    encoder_name=SEG_MODEL_ENCODER,
+    encoder_weights=None,
+)
+
+ckpt = torch.load(SEG_MODEL_PATH, map_location=torch.device("cpu"))
 if isinstance(ckpt, dict):
     if "state_dict" in ckpt:
         ckpt = ckpt["state_dict"]
@@ -28,6 +40,10 @@ if isinstance(ckpt, dict):
 
 model.load_state_dict(ckpt)
 model.eval()
+print(f"[DEBUG] Model architecture: {SEG_MODEL_ARCH}")
+if SEG_MODEL_ARCH in {"deeplabv3+", "deeplabv3plus"}:
+    print(f"[DEBUG] Backbone encoder: {SEG_MODEL_ENCODER}")
+print(f"[DEBUG] Checkpoint path: {SEG_MODEL_PATH}")
 
 # ---- DEVICE ----
 if torch.backends.mps.is_available():

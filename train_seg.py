@@ -11,7 +11,7 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
-from seg_model import UNet
+from seg_model import create_segmentation_model
 
 
 SEED = 42
@@ -23,6 +23,19 @@ VAL_RATIO = 0.1
 FULL_FUNDUS_DIR = os.getenv("FULL_FUNDUS_DIR", "/Users/avinash/Downloads/full-fundus")
 OPTIC_CUP_DIR = os.getenv("OPTIC_CUP_DIR", "/Users/avinash/Downloads/optic-cup")
 OPTIC_DISC_DIR = os.getenv("OPTIC_DISC_DIR", "/Users/avinash/Downloads/optic-disc")
+
+SEG_MODEL_ARCH = os.getenv("SEG_MODEL_ARCH", "deeplabv3plus").strip().lower()
+SEG_MODEL_ENCODER = os.getenv("SEG_MODEL_ENCODER", "resnet34")
+SEG_MODEL_PATH = os.getenv(
+    "SEG_MODEL_PATH",
+    "seg_model.pth" if SEG_MODEL_ARCH == "unet" else f"seg_model_{SEG_MODEL_ARCH}.pth",
+)
+
+print("\n[SEG-TRAIN DEBUG] Startup configuration", flush=True)
+print(f"[SEG-TRAIN DEBUG] Script: {os.path.abspath(__file__)}", flush=True)
+print(f"[SEG-TRAIN DEBUG] Model architecture: {SEG_MODEL_ARCH}", flush=True)
+print(f"[SEG-TRAIN DEBUG] Backbone encoder: {SEG_MODEL_ENCODER}", flush=True)
+print(f"[SEG-TRAIN DEBUG] Checkpoint path: {SEG_MODEL_PATH}\n", flush=True)
 
 
 def set_seed(seed=SEED):
@@ -304,7 +317,15 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 print(f"Train images: {len(train_dataset)} | Val images: {len(val_dataset)}")
 
 # ---- MODEL ----
-model = UNet(out_channels=2)
+model = create_segmentation_model(
+    arch=SEG_MODEL_ARCH,
+    out_channels=2,
+    encoder_name=SEG_MODEL_ENCODER,
+    encoder_weights="imagenet",
+)
+print(f"Model architecture: {SEG_MODEL_ARCH}")
+if SEG_MODEL_ARCH in {"deeplabv3+", "deeplabv3plus"}:
+    print(f"Backbone encoder: {SEG_MODEL_ENCODER}")
 
 if torch.backends.mps.is_available():
     device = torch.device("mps")
@@ -417,8 +438,8 @@ for epoch in range(EPOCHS):
     if avg_val_loss < best_val:
         best_val = avg_val_loss
         no_improve = 0
-        torch.save(model.state_dict(), "seg_model.pth")
-        print("  Saved best model -> seg_model.pth")
+        torch.save(model.state_dict(), SEG_MODEL_PATH)
+        print(f"  Saved best model -> {SEG_MODEL_PATH}")
     else:
         no_improve += 1
         if no_improve >= patience:

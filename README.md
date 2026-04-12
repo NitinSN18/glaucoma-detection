@@ -20,7 +20,9 @@ The classification path gives a direct diagnostic label, while segmentation supp
 
 ### 2. Segmentation
 
-- Model: U-Net (`UNet` in `seg_model.py`)
+- Models:
+	- U-Net (`UNet` in `seg_model.py`)
+	- DeepLabV3+ (via `segmentation-models-pytorch`)
 - Training script: `train_seg.py`
 - Inference/visualization script: `predict_seg.py`
 - Outputs: two masks
@@ -104,10 +106,22 @@ python predict.py
 python train_seg.py
 ```
 
+Train DeepLabV3+ (recommended for better cross-domain generalization):
+
+```bash
+SEG_MODEL_ARCH=deeplabv3plus SEG_MODEL_ENCODER=resnet34 python train_seg.py
+```
+
 ### Run segmentation on one image
 
 ```bash
 python predict_seg.py
+```
+
+Run DeepLabV3+ checkpoint on one image:
+
+```bash
+SEG_MODEL_ARCH=deeplabv3plus SEG_MODEL_ENCODER=resnet34 python predict_seg.py
 ```
 
 ### Create train/val split for classification data
@@ -125,6 +139,9 @@ python split.py
 	- `/Users/avinash/Downloads/optic-cup`
 	- `/Users/avinash/Downloads/optic-disc`
 - Only exact filename triplets are used for training; unmatched full-fundus images are auto-skipped and reported at startup.
+- Segmentation checkpoint defaults:
+	- U-Net: `seg_model.pth`
+	- DeepLabV3+: `seg_model_deeplabv3plus.pth`
 
 ## Future Improvements
 
