@@ -22,3 +22,8 @@ __pycache__/
 
 # Ignore Mac system files
 .DS_Store
+
+# Keep selected shared checkpoints in git
+!best_model.pth
+!seg_model.pth
+!seg_model_deeplabv3plus.pth
