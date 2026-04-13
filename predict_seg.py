@@ -10,6 +10,13 @@ from torchvision import transforms
 from seg_model import build_seg_model
 
 
+def positive_int(value: str) -> int:
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError("Value must be > 0")
+    return ivalue
+
+
 def detect_device() -> torch.device:
     if torch.cuda.is_available():
         return torch.device("cuda")
@@ -169,7 +176,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-path", type=str, default=None, help="Path to model checkpoint")
     parser.add_argument("--image-path", type=str, default=None, help="Path to input image")
     parser.add_argument("--output-dir", type=str, default=default_output, help="Directory for output masks/plot")
-    parser.add_argument("--img-size", type=int, default=256)
+    parser.add_argument("--img-size", type=positive_int, default=256)
     parser.add_argument("--threshold", type=float, default=0.3)
     return parser.parse_args()
 

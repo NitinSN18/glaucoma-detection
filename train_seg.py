@@ -39,6 +39,13 @@ def positive_int(value: str) -> int:
     return ivalue
 
 
+def non_negative_int(value: str) -> int:
+    ivalue = int(value)
+    if ivalue < 0:
+        raise argparse.ArgumentTypeError("Value must be >= 0")
+    return ivalue
+
+
 def resolve_train_paths(images_dir: Optional[str], masks_dir: Optional[str]) -> Tuple[str, str]:
     if images_dir and masks_dir:
         return images_dir, masks_dir
@@ -243,10 +250,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-path", type=str, default=default_save, help="Model output file path")
     parser.add_argument("--plot-path", type=str, default=default_plot, help="Loss plot output path")
     parser.add_argument("--epochs", type=positive_int, default=25)
-    parser.add_argument("--batch-size", type=int, default=8)
-    parser.add_argument("--img-size", type=int, default=256)
+    parser.add_argument("--batch-size", type=positive_int, default=8)
+    parser.add_argument("--img-size", type=positive_int, default=256)
     parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--num-workers", type=int, default=2 if default_kaggle else 0)
+    parser.add_argument("--num-workers", type=non_negative_int, default=2 if default_kaggle else 0)
     parser.add_argument("--no-augment", action="store_true")
     parser.add_argument(
         "--pretrained-backbone",
