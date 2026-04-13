@@ -116,11 +116,21 @@ def run(args: argparse.Namespace) -> None:
             is_key_mismatch = ("missing key" in error_text) or ("unexpected key" in error_text)
             if is_key_mismatch and any(k.startswith("module.") for k in state):
                 state = {k.replace("module.", "", 1): v for k, v in state.items()}
-                model.load_state_dict(state, strict=True)
+                try:
+                    model.load_state_dict(state, strict=True)
+                except RuntimeError as prefixed_err:
+                    raise RuntimeError(
+                        "Checkpoint appears incompatible with the current segmentation model "
+                        "after attempting DataParallel prefix cleanup."
+                    ) from prefixed_err
             else:
-                raise
+                raise RuntimeError(
+                    "Checkpoint appears incompatible with the current segmentation model."
+                ) from err
     else:
-        raise RuntimeError("Checkpoint format is invalid. Expected a state_dict-like mapping.")
+        raise RuntimeError(
+            f"Checkpoint format is invalid. Expected dict-like state_dict, got {type(state).__name__}."
+        )
     model.to(device).eval()
 
     image = Image.open(input_image).convert("RGB")

@@ -221,7 +221,7 @@ def train(args: argparse.Namespace) -> None:
             epoch_loss += float(loss.item())
 
         scheduler.step()
-        avg = epoch_loss / max(1, len(loader))
+        avg = epoch_loss / len(loader)
         history.append(avg)
         print(f"Epoch {epoch + 1:02d}/{args.epochs} | loss={avg:.4f} | lr={scheduler.get_last_lr()[0]:.2e}")
 
