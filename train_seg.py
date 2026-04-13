@@ -163,6 +163,8 @@ def train(args: argparse.Namespace) -> None:
     import matplotlib.pyplot as plt
 
     device = detect_device()
+    if args.epochs <= 0:
+        raise ValueError("--epochs must be > 0")
     images_dir, masks_dir = resolve_train_paths(args.images_dir, args.masks_dir)
 
     save_path = args.save_path
@@ -183,7 +185,7 @@ def train(args: argparse.Namespace) -> None:
         pin_memory=(device.type == "cuda"),
     )
 
-    model = build_seg_model(num_classes=2).to(device)
+    model = build_seg_model(num_classes=2, pretrained_backbone=args.pretrained_backbone).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, args.epochs))
     criterion = SegLoss()
@@ -241,6 +243,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--num-workers", type=int, default=2 if default_kaggle else 0)
     parser.add_argument("--no-augment", action="store_true")
+    parser.add_argument(
+        "--pretrained-backbone",
+        action="store_true",
+        help="Enable ImageNet pretrained backbone weights (may require internet/download).",
+    )
     return parser.parse_args()
 
 

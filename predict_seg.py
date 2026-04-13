@@ -101,7 +101,15 @@ def run(args: argparse.Namespace) -> None:
     state = torch.load(ckpt_path, map_location=device)
     if isinstance(state, dict) and "state_dict" in state:
         state = state["state_dict"]
-    model.load_state_dict(state, strict=False)
+    if isinstance(state, dict):
+        if any(k.startswith("module.") for k in state):
+            state = {k.replace("module.", "", 1): v for k, v in state.items()}
+    missing, unexpected = model.load_state_dict(state, strict=False)
+    if missing or unexpected:
+        raise RuntimeError(
+            "Checkpoint is not compatible with current segmentation model. "
+            f"Missing keys: {missing}. Unexpected keys: {unexpected}."
+        )
     model.to(device).eval()
 
     image = Image.open(input_image).convert("RGB")
