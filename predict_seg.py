@@ -102,14 +102,16 @@ def run(args: argparse.Namespace) -> None:
     if isinstance(state, dict) and "state_dict" in state:
         state = state["state_dict"]
     if isinstance(state, dict):
-        if any(k.startswith("module.") for k in state):
-            state = {k.replace("module.", "", 1): v for k, v in state.items()}
-    missing, unexpected = model.load_state_dict(state, strict=False)
-    if missing or unexpected:
-        raise RuntimeError(
-            "Checkpoint is not compatible with current segmentation model. "
-            f"Missing keys: {missing}. Unexpected keys: {unexpected}."
-        )
+        try:
+            model.load_state_dict(state, strict=True)
+        except RuntimeError:
+            if any(k.startswith("module.") for k in state):
+                state = {k.replace("module.", "", 1): v for k, v in state.items()}
+                model.load_state_dict(state, strict=True)
+            else:
+                raise
+    else:
+        raise RuntimeError("Checkpoint format is invalid. Expected a state_dict-like mapping.")
     model.to(device).eval()
 
     image = Image.open(input_image).convert("RGB")
