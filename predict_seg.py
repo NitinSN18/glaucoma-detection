@@ -104,8 +104,10 @@ def run(args: argparse.Namespace) -> None:
     if isinstance(state, dict):
         try:
             model.load_state_dict(state, strict=True)
-        except RuntimeError:
-            if any(k.startswith("module.") for k in state):
+        except RuntimeError as err:
+            error_text = str(err).lower()
+            is_key_mismatch = ("missing key" in error_text) or ("unexpected key" in error_text)
+            if is_key_mismatch and any(k.startswith("module.") for k in state):
                 state = {k.replace("module.", "", 1): v for k, v in state.items()}
                 model.load_state_dict(state, strict=True)
             else:

@@ -85,7 +85,7 @@ def mask_to_channels(mask_np: np.ndarray) -> np.ndarray:
         cup = (mask_np == 128).astype(np.float32)
         return np.stack([disc, cup], axis=0)
 
-    if np.isin(2, uniques) or np.isin(1, uniques):
+    if 2 in uniques or 1 in uniques:
         cup = (mask_np == 2).astype(np.float32)
         disc = np.logical_or(mask_np == 1, mask_np == 2).astype(np.float32)
         return np.stack([disc, cup], axis=0)
@@ -192,7 +192,7 @@ def train(args: argparse.Namespace) -> None:
 
     model = build_seg_model(num_classes=2, pretrained_backbone=args.pretrained_backbone).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, args.epochs))
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
     criterion = SegLoss()
 
     history: List[float] = []
