@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glaucoma Detection System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>Glaucoma Detection System</h1>
+                <p class="subtitle">AI-Assisted Retinal Image Analysis</p>
+            </div>
+            <div class="health-indicator">
+                <span id="status-indicator" class="status"></span>
+                <span id="status-text">Initializing...</span>
+            </div>
+        </header>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            <strong>⚠️ Important Disclaimer:</strong> This tool is for informational and research purposes only. 
+            It is <strong>NOT</strong> a substitute for professional medical diagnosis. Always consult a qualified 
+            ophthalmologist for medical advice.
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="single-analysis">Single Image</button>
+            <button class="tab-button" data-tab="batch-analysis">Batch Processing</button>
+            <button class="tab-button" data-tab="history">Results History</button>
+        </div>
+
+        <!-- ========== SINGLE IMAGE ANALYSIS TAB ========== -->
+        <div id="single-analysis" class="tab-content active">
+            <div class="content-grid">
+                <!-- Upload Section -->
+                <div class="card">
+                    <h2>Upload Retinal Image</h2>
+                    <div class="upload-area" id="single-upload-area">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>Drag and drop your retinal image here</p>
+                        <p class="upload-hint">or click to select</p>
+                        <input type="file" id="single-image-input" accept="image/png,image/jpeg,image/jpg,image/bmp" hidden>
+                    </div>
+                    <div id="single-preview" class="image-preview hidden">
+                        <img id="single-preview-img" alt="Preview">
+                        <button class="btn-secondary" onclick="resetSingleImage()">✕ Remove</button>
+                    </div>
+                    
+                    <!-- Analysis Mode Selection -->
+                    <div class="analysis-mode">
+                        <label>
+                            <input type="radio" name="analysis-mode" value="combined" checked>
+                            <strong>Combined</strong>: Classification + Segmentation
+                        </label>
+                        <label>
+                            <input type="radio" name="analysis-mode" value="classify-only">
+                            <strong>Classification Only</strong>: Glaucoma Detection
+                        </label>
+                        <label>
+                            <input type="radio" name="analysis-mode" value="segment-only">
+                            <strong>Segmentation Only</strong>: Optic Disc & Cup
+                        </label>
+                    </div>
+
+                    <button class="btn-primary" id="analyze-btn" onclick="analyzeSingleImage()">
+                        <span>Analyze Image</span>
+                    </button>
+                </div>
+
+                <!-- Results Section -->
+                <div class="card" id="results-card" style="display: none;">
+                    <h2>Analysis Results</h2>
+                    
+                    <!-- Classification Results -->
+                    <div id="classification-results" style="display: none;">
+                        <h3>Diagnostic Classification</h3>
+                        <div class="result-box">
+                            <div class="prediction">
+                                <span class="label">Diagnosis:</span>
+                                <span id="result-prediction" class="value"></span>
+                            </div>
+                            <div class="confidence-container">
+                                <span class="label">Confidence:</span>
+                                <div class="confidence-bar">
+                                    <div id="confidence-fill" class="confidence-fill"></div>
+                                </div>
+                                <span id="result-confidence" class="value">0%</span>
+                            </div>
+                            <div class="probabilities">
+                                <p><strong>Probability Scores:</strong></p>
+                                <div class="prob-row">
+                                    <span>Glaucoma:</span>
+                                    <span id="prob-glaucoma">0%</span>
+                                </div>
+                                <div class="prob-row">
+                                    <span>Normal:</span>
+                                    <span id="prob-normal">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Segmentation Results -->
+                    <div id="segmentation-results" style="display: none;">
+                        <h3>Structural Segmentation</h3>
+                        <div class="segmentation-display">
+                            <div class="image-container">
+                                <h4>Original Image</h4>
+                                <img id="result-original" alt="Original Image">
+                            </div>
+                            <div class="image-container">
+                                <h4>Segmentation Overlay</h4>
+                                <div class="legend">
+                                    <span class="legend-item"><span class="color-disc"></span> Optic Disc</span>
+                                    <span class="legend-item"><span class="color-cup"></span> Optic Cup</span>
+                                </div>
+                                <img id="result-overlay" alt="Segmentation Overlay">
+                            </div>
+                        </div>
+                        <div class="mask-detail">
+                            <h4>Individual Masks</h4>
+                            <div class="mask-row">
+                                <div>
+                                    <p>Disc Mask</p>
+                                    <img id="result-disc-mask" alt="Disc Mask" style="max-width: 150px;">
+                                </div>
+                                <div>
+                                    <p>Cup Mask</p>
+                                    <img id="result-cup-mask" alt="Cup Mask" style="max-width: 150px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn-secondary" id="download-results-btn">Download Results</button>
+                        <button class="btn-secondary" onclick="resetSingleImage()">Analyze Another</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="single-loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Processing image... This may take a few moments.</p>
+            </div>
+        </div>
+
+        <!-- ========== BATCH ANALYSIS TAB ========== -->
+        <div id="batch-analysis" class="tab-content">
+            <div class="content-grid">
+                <!-- Batch Upload Section -->
+                <div class="card">
+                    <h2>Batch Upload</h2>
+                    <div class="upload-area" id="batch-upload-area">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>Drag and drop multiple images here</p>
+                        <p class="upload-hint">or click to select</p>
+                        <input type="file" id="batch-image-input" accept="image/*" multiple hidden>
+                    </div>
+                    
+                    <div id="batch-file-list" class="file-list hidden">
+                        <h3>Selected Files (<span id="batch-file-count">0</span>)</h3>
+                        <ul id="batch-files"></ul>
+                    </div>
+
+                    <div class="batch-actions">
+                        <button class="btn-primary" id="batch-process-btn" onclick="processBatch()" style="display: none;">
+                            <span>Process All Images</span>
+                        </button>
+                        <button class="btn-secondary" id="batch-clear-btn" onclick="resetBatch()" style="display: none;">
+                            Clear Selection
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Batch Results Section -->
+                <div class="card" id="batch-results-card" style="display: none;">
+                    <h2>Batch Results</h2>
+                    <div class="progress-section">
+                        <div class="progress-info">
+                            <span id="batch-progress-text">0 of 0 processed</span>
+                            <span id="batch-success-count">(0 successful)</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="batch-progress-fill" class="progress-fill"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="batch-results-list" class="batch-results-list"></div>
+                    
+                    <div class="batch-action-buttons" style="margin-top: 20px;">
+                        <button class="btn-secondary" onclick="downloadBatchResults()">Download All Results</button>
+                        <button class="btn-secondary" onclick="resetBatch()">Process Another Batch</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Loading -->
+            <div id="batch-loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p id="batch-loading-text">Processing images...</p>
+            </div>
+        </div>
+
+        <!-- ========== HISTORY TAB ========== -->
+        <div id="history" class="tab-content">
+            <div class="card">
+                <h2>Results History</h2>
+                <div id="history-container">
+                    <p style="color: #666;">No results yet. Analyze an image to get started.</p>
+                </div>
+                <button class="btn-secondary" onclick="clearHistory()" style="margin-top: 20px; display: none;" id="clear-history-btn">
+                    Clear History
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio element for feedback (optional) -->
+    <audio id="notification-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj==" type="audio/wav">
+    </audio>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
