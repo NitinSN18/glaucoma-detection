@@ -4,3 +4,7 @@ efficientnet-pytorch
 pillow
 numpy
 matplotlib
+opencv-python
+scipy
+segmentation-models-pytorch
+timm

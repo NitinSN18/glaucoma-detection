@@ -1,1 +1,459 @@
-{"metadata":{"kernelspec":{"language":"python","display_name":"Python 3","name":"python3"},"language_info":{"name":"python","version":"3.12.12","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kaggle":{"accelerator":"nvidiaTeslaT4","dataSources":[{"sourceType":"datasetVersion","sourceId":15400111,"datasetId":9851748,"databundleVersionId":16314961},{"sourceType":"datasetVersion","sourceId":15333944,"datasetId":9807921,"databundleVersionId":16241860},{"sourceType":"datasetVersion","sourceId":15406516,"datasetId":9855794,"databundleVersionId":16322210}],"dockerImageVersionId":31328,"isInternetEnabled":true,"language":"python","sourceType":"notebook","isGpuEnabled":true}},"nbformat_minor":4,"nbformat":4,"cells":[{"cell_type":"markdown","source":"**Train.py**\n","metadata":{}},{"cell_type":"code","source":"import os\nimport sys\nimport torch\nimport torch.nn as nn\nimport torch.optim as optim\nfrom torchvision import datasets, transforms\nfrom torch.utils.data import DataLoader\nfrom pathlib import Path\n\n# ----AUTO-INSTALL EfficientNet ----\ntry:\n    from efficientnet_pytorch import EfficientNet\nexcept ModuleNotFoundError:\n    print(\"Installing efficientnet_pytorch...\")\n    os.system(\"pip install efficientnet_pytorch\")\n    from efficientnet_pytorch import EfficientNet\n\n\n# ---- PATH HANDLING (Kaggle + Local) ----\nif Path(\"/kaggle/input\").exists():\n    print(\"Running in Kaggle\")\n\n    base_path = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data\"\n\n    train_path = os.path.join(base_path, \"train\")\n    val_path   = os.path.join(base_path, \"val\")\n\nelse:\n    print(\"Running locally\")\n\n    train_path = \"data/train\"\n    val_path   = \"data/val\"\n\n\n# ---- CHECK PATH ----\nprint(\"Train path:\", train_path)\nprint(\"Val path:\", val_path)\nprint(\"Train exists:\", os.path.exists(train_path))\nprint(\"Val exists:\", os.path.exists(val_path))\n\nif not os.path.exists(train_path) or not os.path.exists(val_path):\n    raise FileNotFoundError(\"Dataset path incorrect\")\n\n\n# ---- TRANSFORMS ----\ntransform = transforms.Compose([\n    transforms.Resize((224, 224)),\n    transforms.RandomHorizontalFlip(),\n    transforms.RandomRotation(15),\n    transforms.ColorJitter(brightness=0.3, contrast=0.3),\n    transforms.ToTensor(),\n    transforms.Normalize(\n        [0.485, 0.456, 0.406],\n        [0.229, 0.224, 0.225]\n    )\n])\n\n\n# ---- DATASET ----\ntrain_data = datasets.ImageFolder(train_path, transform=transform)\nval_data   = datasets.ImageFolder(val_path, transform=transform)\n\nprint(\"Training images:\", len(train_data))\nprint(\"Validation images:\", len(val_data))\nprint(\"Classes:\", train_data.classes)\n\ntrain_loader = DataLoader(train_data, batch_size=8, shuffle=True)\nval_loader   = DataLoader(val_data, batch_size=8)\n\n\n# ---- MODEL ----\nprint(\"Loading model...\")\nmodel = EfficientNet.from_pretrained('efficientnet-b4')\nmodel._fc = nn.Linear(model._fc.in_features, 2)\n\n\n# ---- DEVICE ----\nif torch.cuda.is_available():\n    device = torch.device(\"cuda\")\nelif torch.backends.mps.is_available():\n    device = torch.device(\"mps\")\nelse:\n    device = torch.device(\"cpu\")\n\nmodel = model.to(device)\nprint(\"Using device:\", device)\n\n\n# ---- LOSS + OPTIMIZER ----\ncriterion = nn.CrossEntropyLoss()\noptimizer = optim.Adam(model.parameters(), lr=1e-4)\n\n\n# ---- TRAINING ----\nepochs = 10\nbest_acc = 0.0\n\nprint(\"Starting training...\")\n\nfor epoch in range(epochs):\n    print(f\"\\n--- Epoch {epoch+1} ---\")\n\n    model.train()\n    running_loss = 0.0\n\n    for images, labels in train_loader:\n        images = images.to(device)\n        labels = labels.to(device)\n\n        optimizer.zero_grad()\n        outputs = model(images)\n        loss = criterion(outputs, labels)\n\n        loss.backward()\n        optimizer.step()\n\n        running_loss += loss.item()\n\n    print(f\"Training Loss: {running_loss / len(train_loader):.4f}\")\n\n    # ---- VALIDATION ----\n    model.eval()\n    correct = 0\n    total = 0\n\n    with torch.no_grad():\n        for images, labels in val_loader:\n            images = images.to(device)\n            labels = labels.to(device)\n\n            outputs = model(images)\n            _, predicted = torch.max(outputs, 1)\n\n            total += labels.size(0)\n            correct += (predicted == labels).sum().item()\n\n    accuracy = 100 * correct / total\n    print(f\"Validation Accuracy: {accuracy:.2f}%\")\n\n    if accuracy > best_acc:\n        best_acc = accuracy\n        torch.save(model.state_dict(), \"best_model.pth\")\n        print(\"Model saved\")\n\nprint(\"Training complete\")","metadata":{"_uuid":"2697ad9d-00b6-4f38-80d2-d297b6cc84a1","_cell_guid":"39acdd79-43c5-430f-8220-159efa86b92c","trusted":true,"execution":{"iopub.status.busy":"2026-03-30T08:23:31.325993Z","iopub.execute_input":"2026-03-30T08:23:31.326473Z","iopub.status.idle":"2026-03-30T08:35:11.454698Z","shell.execute_reply.started":"2026-03-30T08:23:31.326437Z","shell.execute_reply":"2026-03-30T08:35:11.453944Z"}},"outputs":[{"name":"stdout","text":"Installing efficientnet_pytorch...\nCollecting efficientnet_pytorch\n  Downloading efficientnet_pytorch-0.7.1.tar.gz (21 kB)\n  Preparing metadata (setup.py): started\n  Preparing metadata (setup.py): finished with status 'done'\nRequirement already satisfied: torch in /usr/local/lib/python3.12/dist-packages (from efficientnet_pytorch) (2.10.0+cu128)\nRequirement already satisfied: filelock in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.24.3)\nRequirement already satisfied: typing-extensions>=4.10.0 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (4.15.0)\nRequirement already satisfied: setuptools in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (75.2.0)\nRequirement already satisfied: sympy>=1.13.3 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (1.14.0)\nRequirement already satisfied: networkx>=2.5.1 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.6.1)\nRequirement already satisfied: jinja2 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.1.6)\nRequirement already satisfied: fsspec>=0.8.5 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (2026.2.0)\nRequirement already satisfied: cuda-bindings==12.9.4 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.9.4)\nRequirement already satisfied: nvidia-cuda-nvrtc-cu12==12.8.93 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.93)\nRequirement already satisfied: nvidia-cuda-runtime-cu12==12.8.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.90)\nRequirement already satisfied: nvidia-cuda-cupti-cu12==12.8.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.90)\nRequirement already satisfied: nvidia-cudnn-cu12==9.10.2.21 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (9.10.2.21)\nRequirement already satisfied: nvidia-cublas-cu12==12.8.4.1 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.4.1)\nRequirement already satisfied: nvidia-cufft-cu12==11.3.3.83 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (11.3.3.83)\nRequirement already satisfied: nvidia-curand-cu12==10.3.9.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (10.3.9.90)\nRequirement already satisfied: nvidia-cusolver-cu12==11.7.3.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (11.7.3.90)\nRequirement already satisfied: nvidia-cusparse-cu12==12.5.8.93 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.5.8.93)\nRequirement already satisfied: nvidia-cusparselt-cu12==0.7.1 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (0.7.1)\nRequirement already satisfied: nvidia-nccl-cu12==2.27.5 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (2.27.5)\nRequirement already satisfied: nvidia-nvshmem-cu12==3.4.5 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.4.5)\nRequirement already satisfied: nvidia-nvtx-cu12==12.8.90 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.90)\nRequirement already satisfied: nvidia-nvjitlink-cu12==12.8.93 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (12.8.93)\nRequirement already satisfied: nvidia-cufile-cu12==1.13.1.3 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (1.13.1.3)\nRequirement already satisfied: triton==3.6.0 in /usr/local/lib/python3.12/dist-packages (from torch->efficientnet_pytorch) (3.6.0)\nRequirement already satisfied: cuda-pathfinder~=1.1 in /usr/local/lib/python3.12/dist-packages (from cuda-bindings==12.9.4->torch->efficientnet_pytorch) (1.3.5)\nRequirement already satisfied: mpmath<1.4,>=1.1.0 in /usr/local/lib/python3.12/dist-packages (from sympy>=1.13.3->torch->efficientnet_pytorch) (1.3.0)\nRequirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.12/dist-packages (from jinja2->torch->efficientnet_pytorch) (3.0.3)\nBuilding wheels for collected packages: efficientnet_pytorch\n  Building wheel for efficientnet_pytorch (setup.py): started\n  Building wheel for efficientnet_pytorch (setup.py): finished with status 'done'\n  Created wheel for efficientnet_pytorch: filename=efficientnet_pytorch-0.7.1-py3-none-any.whl size=16426 sha256=7fae3a27f5d6e1773330277b017d1b9f7c33b6a98ebb293c98e2a308893dd091\n  Stored in directory: /root/.cache/pip/wheels/9c/3f/43/e6271c7026fe08c185da2be23c98c8e87477d3db63f41f32ad\nSuccessfully built efficientnet_pytorch\nInstalling collected packages: efficientnet_pytorch\nSuccessfully installed efficientnet_pytorch-0.7.1\nRunning in Kaggle\nTrain path: /kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/train\nVal path: /kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/val\nTrain exists: True\nVal exists: True\nTraining images: 2362\nValidation images: 141\nClasses: ['glaucoma', 'normal']\nLoading model...\nDownloading: \"https://github.com/lukemelas/EfficientNet-PyTorch/releases/download/1.0/efficientnet-b4-6ed6700e.pth\" to /root/.cache/torch/hub/checkpoints/efficientnet-b4-6ed6700e.pth\n","output_type":"stream"},{"name":"stderr","text":"100%|██████████| 74.4M/74.4M [00:00<00:00, 242MB/s]\n","output_type":"stream"},{"name":"stdout","text":"Loaded pretrained weights for efficientnet-b4\nUsing device: cuda\nStarting training...\n\n--- Epoch 1 ---\nTraining Loss: 0.4598\nValidation Accuracy: 91.49%\nModel saved\n\n--- Epoch 2 ---\nTraining Loss: 0.3969\nValidation Accuracy: 95.04%\nModel saved\n\n--- Epoch 3 ---\nTraining Loss: 0.3513\nValidation Accuracy: 98.58%\nModel saved\n\n--- Epoch 4 ---\nTraining Loss: 0.3232\nValidation Accuracy: 97.87%\n\n--- Epoch 5 ---\nTraining Loss: 0.2954\nValidation Accuracy: 96.45%\n\n--- Epoch 6 ---\nTraining Loss: 0.2500\nValidation Accuracy: 95.74%\n\n--- Epoch 7 ---\nTraining Loss: 0.2234\nValidation Accuracy: 98.58%\n\n--- Epoch 8 ---\nTraining Loss: 0.1829\nValidation Accuracy: 98.58%\n\n--- Epoch 9 ---\nTraining Loss: 0.1597\nValidation Accuracy: 97.87%\n\n--- Epoch 10 ---\nTraining Loss: 0.1404\nValidation Accuracy: 98.58%\nTraining complete\n","output_type":"stream"}],"execution_count":3},{"cell_type":"markdown","source":"**Predict.py**","metadata":{}},{"cell_type":"code","source":"from efficientnet_pytorch import EfficientNet\n\nimport sys\nimport torch\nimport torch.nn as nn\nfrom torchvision import transforms\nfrom PIL import Image\nfrom pathlib import Path\nimport os\n\n# ---- DEVICE ----\nif torch.cuda.is_available():\n    device = torch.device(\"cuda\")\nelif torch.backends.mps.is_available():\n    device = torch.device(\"mps\")\nelse:\n    device = torch.device(\"cpu\")\n\nprint(\"Using device:\", device)\n\n# ---- TRANSFORM ----\ntransform = transforms.Compose([\n    transforms.Resize((224, 224)),\n    transforms.ToTensor(),\n    transforms.Normalize(\n        [0.485, 0.456, 0.406],\n        [0.229, 0.224, 0.225]\n    )\n])\n\n# ---- MODEL ----\nmodel = EfficientNet.from_pretrained('efficientnet-b4')\nmodel._fc = nn.Linear(model._fc.in_features, 2)\n\n# ---- LOAD MODEL (Kaggle + Local safe) ----\npossible_paths = []\n\n# Kaggle\nkaggle_path = Path(\"/kaggle/working/best_model.pth\")\nif kaggle_path.exists():\n    possible_paths.append(kaggle_path)\n\n# Current working dir\ncwd_path = Path(os.getcwd()) / \"best_model.pth\"\nif cwd_path.exists():\n    possible_paths.append(cwd_path)\n\n# Script dir\ntry:\n    script_path = Path(__file__).resolve().parent / \"best_model.pth\"\n    if script_path.exists():\n        possible_paths.append(script_path)\nexcept:\n    pass\n\nif not possible_paths:\n    raise FileNotFoundError(\"best_model.pth not found\")\n\nmodel_path = possible_paths[0]\n\nmodel.load_state_dict(torch.load(str(model_path), map_location=device))\nmodel = model.to(device)\nmodel.eval()\n\nprint(\"Loaded model from:\", model_path)\n\n# ---- IMAGE INPUT MODE ----\nimage_paths = []\nvalid_ext = (\".jpg\", \".jpeg\", \".png\")\n\n# ---- CLI (FILTERED to avoid Jupyter args) ----\nif len(sys.argv) > 1:\n    image_paths = [\n        p for p in sys.argv[1:]\n        if p.lower().endswith(valid_ext) and os.path.exists(p)\n    ]\n\n# ---- Kaggle AUTO (if no valid CLI input) ----\nif not image_paths and Path(\"/kaggle/input\").exists():\n    print(\"Running in Kaggle mode\")\n\n    base = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/test\"\n\n    image_paths = [\n        os.path.join(base, f)\n        for f in os.listdir(base)\n        if f.lower().endswith(valid_ext)\n    ]\n\n# ---- Local GUI fallback ----\nif not image_paths:\n    try:\n        import tkinter as tk\n        from tkinter import filedialog\n\n        root = tk.Tk()\n        root.withdraw()\n\n        path = filedialog.askopenfilename(\n            title=\"Select Fundus Image\",\n            filetypes=[(\"Image Files\", \"*.jpg *.jpeg *.png\")]\n        )\n\n        if not path:\n            print(\"No image selected\")\n            sys.exit()\n\n        image_paths = [path]\n\n    except Exception:\n        print(\"No valid input. Use: python predict.py <image_path>\")\n        sys.exit()\n\n# ---- PREDICTION ----\nclasses = [\"glaucoma\", \"normal\"]\n\nfor image_path in image_paths:\n    try:\n        image = Image.open(image_path).convert(\"RGB\")\n        image_tensor = transform(image).unsqueeze(0).to(device)\n\n        with torch.no_grad():\n            outputs = model(image_tensor)\n            probs = torch.softmax(outputs, dim=1)\n            confidence, pred = torch.max(probs, 1)\n\n        print(\"\\nImage     :\", image_path)\n        print(\"Prediction:\", classes[pred.item()])\n        print(\"Confidence:\", f\"{confidence.item():.4f}\")\n\n    except Exception as e:\n        print(f\"Error processing {image_path}: {e}\")","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2026-03-30T08:35:11.456097Z","iopub.execute_input":"2026-03-30T08:35:11.456423Z","iopub.status.idle":"2026-03-30T08:35:12.170640Z","shell.execute_reply.started":"2026-03-30T08:35:11.456400Z","shell.execute_reply":"2026-03-30T08:35:12.169849Z"}},"outputs":[{"name":"stdout","text":"Using device: cuda\nLoaded pretrained weights for efficientnet-b4\nLoaded model from: /kaggle/working/best_model.pth\nRunning in Kaggle mode\n\nImage     : /kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/test/test.jpg\nPrediction: normal\nConfidence: 0.6668\n\nImage     : /kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/test/t2.jpg\nPrediction: normal\nConfidence: 0.7165\n","output_type":"stream"}],"execution_count":4},{"cell_type":"markdown","source":"**Segementation Model**","metadata":{}},{"cell_type":"code","source":"\"\"\"\ntrain_seg.py\n============\nUnified UNet segmentation trainer — Kaggle + Local compatible.\n\nTrains a 2-channel UNet to segment:\n  - Channel 0 → Optic Disc  (mask pixel value 255)\n  - Channel 1 → Optic Cup   (mask pixel value 128)\n\nUsage:\n  Kaggle  : just run all cells — paths are auto-detected\n  Local   : python train_seg.py\n\"\"\"\n\nimport os\nimport random\nimport numpy as np\nfrom pathlib import Path\n\nimport torch\nimport torch.nn as nn\nfrom torch.utils.data import DataLoader, Dataset\nfrom torchvision import transforms\nfrom PIL import Image\nimport matplotlib\nmatplotlib.use(\"Agg\")          # headless-safe (works in Kaggle + local)\nimport matplotlib.pyplot as plt\n\n# ════════════════════════════════════════════════════════════\n#  1.  U-NET  (inlined — no separate seg_model.py needed)\n# ════════════════════════════════════════════════════════════\n\nclass DoubleConv(nn.Module):\n    \"\"\"Two consecutive (Conv → BN → ReLU) blocks.\"\"\"\n    def __init__(self, in_ch, out_ch):\n        super().__init__()\n        self.block = nn.Sequential(\n            nn.Conv2d(in_ch, out_ch, 3, padding=1, bias=False),\n            nn.BatchNorm2d(out_ch),\n            nn.ReLU(inplace=True),\n            nn.Conv2d(out_ch, out_ch, 3, padding=1, bias=False),\n            nn.BatchNorm2d(out_ch),\n            nn.ReLU(inplace=True),\n        )\n    def forward(self, x):\n        return self.block(x)\n\n\nclass UNet(nn.Module):\n    \"\"\"\n    Lightweight UNet:\n      Encoder: 3→64→128\n      Decoder: 128→64\n      Head:    64→out_channels (1×1 conv, no activation — raw logits)\n    \"\"\"\n    def __init__(self, in_channels=3, out_channels=2, features=64):\n        super().__init__()\n        f = features\n\n        # Encoder\n        self.enc1 = DoubleConv(in_channels, f)\n        self.pool1 = nn.MaxPool2d(2)\n        self.enc2 = DoubleConv(f, f * 2)\n        self.pool2 = nn.MaxPool2d(2)\n\n        # Bottleneck\n        self.bottleneck = DoubleConv(f * 2, f * 4)\n\n        # Decoder\n        self.up2   = nn.ConvTranspose2d(f * 4, f * 2, kernel_size=2, stride=2)\n        self.dec2  = DoubleConv(f * 4, f * 2)   # concat enc2 skip\n        self.up1   = nn.ConvTranspose2d(f * 2, f, kernel_size=2, stride=2)\n        self.dec1  = DoubleConv(f * 2, f)        # concat enc1 skip\n\n        # Output head\n        self.final = nn.Conv2d(f, out_channels, kernel_size=1)\n\n    def forward(self, x):\n        # Encode\n        e1 = self.enc1(x)\n        e2 = self.enc2(self.pool1(e1))\n        b  = self.bottleneck(self.pool2(e2))\n\n        # Decode (skip connections)\n        d2 = self.dec2(torch.cat([self.up2(b), e2], dim=1))\n        d1 = self.dec1(torch.cat([self.up1(d2), e1], dim=1))\n\n        return self.final(d1)   # raw logits, shape: (B, out_channels, H, W)\n\n\n# ════════════════════════════════════════════════════════════\n#  2.  DEVICE\n# ════════════════════════════════════════════════════════════\n\nif torch.cuda.is_available():\n    device = torch.device(\"cuda\")\nelif torch.backends.mps.is_available():\n    device = torch.device(\"mps\")\nelse:\n    device = torch.device(\"cpu\")\n\nprint(f\"Using device: {device}\")\n\n\n# ════════════════════════════════════════════════════════════\n#  3.  PATHS  (auto Kaggle / local)\n# ════════════════════════════════════════════════════════════\n\nKAGGLE = Path(\"/kaggle/input\").exists()\n\nif KAGGLE:\n    print(\"Running in Kaggle\")\n    img_dir   = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/seg_data/seg_data/images\"\n    mask_dir  = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/seg_data/seg_data/masks\"\n    save_path = \"/kaggle/working/seg_model.pth\"\n    plot_path = \"/kaggle/working/seg_loss.png\"\nelse:\n    print(\"Running locally\")\n    img_dir   = \"seg_data/images\"\n    mask_dir  = \"seg_data/masks\"\n    save_path = \"seg_model.pth\"\n    plot_path = \"seg_loss.png\"\n\nprint(f\"  Images : {img_dir}\")\nprint(f\"  Masks  : {mask_dir}\")\n\n# ---- quick sanity check ----\nif not os.path.exists(img_dir) or not os.path.exists(mask_dir):\n    raise FileNotFoundError(\n        f\"Dataset directories not found!\\n  images: {img_dir}\\n  masks : {mask_dir}\"\n    )\n\n\n# ════════════════════════════════════════════════════════════\n#  4.  DATASET  (synchronized augmentation — fixes the bug)\n# ════════════════════════════════════════════════════════════\n\nclass SegDataset(Dataset):\n    \"\"\"\n    Loads fundus images + single-channel PNG masks.\n\n    Mask pixel convention (verify with debug cell if unsure):\n      255 → Optic Disc\n      128 → Optic Cup\n        0 → Background\n\n    Augmentation is applied IDENTICALLY to image and mask\n    so they never go out of sync.\n    \"\"\"\n\n    def __init__(self, img_dir, mask_dir, img_size=256, augment=True):\n        self.img_dir  = img_dir\n        self.mask_dir = mask_dir\n        self.img_size = img_size\n        self.augment  = augment\n\n        self.imgs = sorted([\n            f for f in os.listdir(img_dir)\n            if f.lower().endswith((\".jpg\", \".jpeg\", \".png\"))\n            and not f.startswith(\".\")\n        ])\n\n        self.normalize = transforms.Normalize([0.5]*3, [0.5]*3)\n\n    def __len__(self):\n        return len(self.imgs)\n\n    def __getitem__(self, idx):\n        name  = self.imgs[idx]\n        mname = os.path.splitext(name)[0] + \".png\"\n\n        img  = Image.open(os.path.join(self.img_dir,  name )).convert(\"RGB\")\n        mask = Image.open(os.path.join(self.mask_dir, mname)).convert(\"L\")\n\n        # ── Resize ──────────────────────────────────────────\n        img  = img.resize ((self.img_size, self.img_size), Image.BILINEAR)\n        mask = mask.resize((self.img_size, self.img_size), Image.NEAREST)\n\n        # ── Synchronized augmentation ────────────────────────\n        if self.augment:\n            # Horizontal flip\n            if random.random() > 0.5:\n                img  = img.transpose(Image.FLIP_LEFT_RIGHT)\n                mask = mask.transpose(Image.FLIP_LEFT_RIGHT)\n\n            # Vertical flip\n            if random.random() > 0.5:\n                img  = img.transpose(Image.FLIP_TOP_BOTTOM)\n                mask = mask.transpose(Image.FLIP_TOP_BOTTOM)\n\n            # Rotation\n            angle = random.uniform(-15, 15)\n            img  = img.rotate(angle,  resample=Image.BILINEAR, fillcolor=0)\n            mask = mask.rotate(angle, resample=Image.NEAREST,  fillcolor=0)\n\n        # ── Image → tensor ───────────────────────────────────\n        img_t = transforms.ToTensor()(img)   # [3, H, W]\n        img_t = self.normalize(img_t)\n\n        # ── Mask → 2-channel binary tensor ───────────────────\n        mask_np = np.array(mask)\n\n        # ⚠ Change these values if your masks use 1/2 instead of 255/128\n        disc = (mask_np == 255).astype(np.float32)\n        cup  = (mask_np == 128).astype(np.float32)\n\n        mask_t = torch.tensor(np.stack([disc, cup], axis=0))  # [2, H, W]\n\n        return img_t, mask_t\n\n\n# ════════════════════════════════════════════════════════════\n#  5.  LOSS  (per-channel dice — fixes the collapse bug)\n# ════════════════════════════════════════════════════════════\n\nbce_fn = nn.BCEWithLogitsLoss()\n\ndef dice_loss(pred, target, eps=1e-6):\n    \"\"\"\n    Per-channel dice, averaged over channels.\n    pred, target: (B, C, H, W) — pred is raw logits.\n    \"\"\"\n    pred  = torch.sigmoid(pred)\n    inter = (pred * target).sum(dim=(0, 2, 3))          # (C,)\n    union = pred.sum(dim=(0, 2, 3)) + target.sum(dim=(0, 2, 3))\n    return 1.0 - ((2.0 * inter + eps) / (union + eps)).mean()\n\ndef loss_fn(pred, target):\n    return bce_fn(pred, target) + dice_loss(pred, target)\n\n\n# ════════════════════════════════════════════════════════════\n#  6.  DATA LOADERS\n# ════════════════════════════════════════════════════════════\n\ntrain_ds = SegDataset(img_dir, mask_dir, img_size=256, augment=True)\nprint(f\"Samples found: {len(train_ds)}\")\n\n# Optional: small debug check on mask values (runs on first sample only)\n_, _m = train_ds[0]\nprint(f\"Mask shape: {_m.shape}  |  disc pixels: {int(_m[0].sum())}  cup pixels: {int(_m[1].sum())}\")\nif _m[0].sum() == 0 and _m[1].sum() == 0:\n    print(\"⚠  WARNING: Both mask channels are all-zero for sample 0.\")\n    print(\"   Your mask pixel values may not be 255/128.\")\n    print(\"   Run the debug snippet below to check actual values.\")\n    print()\n    print(\"   --- DEBUG SNIPPET ---\")\n    print(\"   import numpy as np; from PIL import Image; import os\")\n    print(\"   m = np.array(Image.open(os.path.join(mask_dir, os.listdir(mask_dir)[0])).convert('L'))\")\n    print(\"   print(np.unique(m))\")\n    print(\"   --------------------\")\n\nloader = DataLoader(\n    train_ds,\n    batch_size=8,\n    shuffle=True,\n    num_workers=2 if KAGGLE else 0,   # 0 on Windows local to avoid multiprocess issues\n    pin_memory=(device.type == \"cuda\"),\n)\n\n\n# ════════════════════════════════════════════════════════════\n#  7.  MODEL + OPTIMIZER\n# ════════════════════════════════════════════════════════════\n\nmodel = UNet(in_channels=3, out_channels=2, features=64).to(device)\n\noptimizer = torch.optim.Adam(model.parameters(), lr=1e-4)\nscheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=25)\n\n\n# ════════════════════════════════════════════════════════════\n#  8.  TRAINING LOOP\n# ════════════════════════════════════════════════════════════\n\nEPOCHS = 25\nhistory = []\n\nprint(f\"\\nStarting training — {EPOCHS} epochs\")\nprint(\"=\" * 50)\n\nfor epoch in range(EPOCHS):\n    model.train()\n    epoch_loss = 0.0\n\n    for imgs, masks in loader:\n        imgs  = imgs.to(device)\n        masks = masks.to(device)\n\n        preds = model(imgs)\n        loss  = loss_fn(preds, masks)\n\n        optimizer.zero_grad()\n        loss.backward()\n        # Gradient clipping — prevents explosion → NaN → silent 0.0000 loss\n        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n        optimizer.step()\n\n        epoch_loss += loss.item()\n\n    scheduler.step()\n\n    avg = epoch_loss / len(loader)\n    history.append(avg)\n    lr  = scheduler.get_last_lr()[0]\n    print(f\"Epoch {epoch+1:02d}/{EPOCHS}  loss={avg:.4f}  lr={lr:.2e}\")\n\n\n# ════════════════════════════════════════════════════════════\n#  9.  SAVE MODEL\n# ════════════════════════════════════════════════════════════\n\ntorch.save(model.state_dict(), save_path)\nprint(f\"\\nSaved model → {save_path}\")\n\n\n# ════════════════════════════════════════════════════════════\n#  10. LOSS CURVE\n# ════════════════════════════════════════════════════════════\n\nplt.figure(figsize=(8, 4))\nplt.plot(range(1, EPOCHS + 1), history, marker=\"o\", linewidth=2, color=\"#2196F3\")\nplt.title(\"Segmentation Training Loss\")\nplt.xlabel(\"Epoch\")\nplt.ylabel(\"Loss (BCE + Dice)\")\nplt.grid(True, alpha=0.3)\nplt.tight_layout()\nplt.savefig(plot_path, dpi=120)\nprint(f\"Loss curve saved → {plot_path}\")\nplt.show()","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2026-03-30T08:35:12.171539Z","iopub.execute_input":"2026-03-30T08:35:12.171930Z"}},"outputs":[{"name":"stdout","text":"Using device: cuda\nRunning in Kaggle\n  Images : /kaggle/input/datasets/avinashreddy2309/glaucoma-detection/seg_data/seg_data/images\n  Masks  : /kaggle/input/datasets/avinashreddy2309/glaucoma-detection/seg_data/seg_data/masks\nSamples found: 1020\nMask shape: torch.Size([2, 256, 256])  |  disc pixels: 0  cup pixels: 0\n⚠  WARNING: Both mask channels are all-zero for sample 0.\n   Your mask pixel values may not be 255/128.\n   Run the debug snippet below to check actual values.\n\n   --- DEBUG SNIPPET ---\n   import numpy as np; from PIL import Image; import os\n   m = np.array(Image.open(os.path.join(mask_dir, os.listdir(mask_dir)[0])).convert('L'))\n   print(np.unique(m))\n   --------------------\n\nStarting training — 25 epochs\n==================================================\nEpoch 01/25  loss=1.3865  lr=9.96e-05\nEpoch 02/25  loss=1.2732  lr=9.84e-05\nEpoch 03/25  loss=1.2077  lr=9.65e-05\nEpoch 04/25  loss=1.1591  lr=9.38e-05\nEpoch 05/25  loss=1.1235  lr=9.05e-05\nEpoch 06/25  loss=1.0977  lr=8.64e-05\nEpoch 07/25  loss=1.0790  lr=8.19e-05\nEpoch 08/25  loss=1.0653  lr=7.68e-05\nEpoch 09/25  loss=1.0552  lr=7.13e-05\nEpoch 10/25  loss=1.0477  lr=6.55e-05\nEpoch 11/25  loss=1.0415  lr=5.94e-05\nEpoch 12/25  loss=1.0368  lr=5.31e-05\nEpoch 13/25  loss=1.0330  lr=4.69e-05\nEpoch 14/25  loss=1.0300  lr=4.06e-05\nEpoch 15/25  loss=1.0276  lr=3.45e-05\nEpoch 16/25  loss=1.0257  lr=2.87e-05\nEpoch 17/25  loss=1.0242  lr=2.32e-05\nEpoch 18/25  loss=1.0230  lr=1.81e-05\nEpoch 19/25  loss=1.0221  lr=1.36e-05\nEpoch 20/25  loss=1.0214  lr=9.55e-06\nEpoch 21/25  loss=1.0209  lr=6.18e-06\nEpoch 22/25  loss=1.0205  lr=3.51e-06\n","output_type":"stream"}],"execution_count":null},{"cell_type":"markdown","source":"**Segmentation_predict**","metadata":{}},{"cell_type":"code","source":"import torch\nimport torch.nn as nn\nfrom torchvision import transforms\nfrom PIL import Image\nimport matplotlib.pyplot as plt\nimport numpy as np\nfrom pathlib import Path\n\n# ---- UNET INLINE ----\nclass UNet(nn.Module):\n    def __init__(self, out_channels=2):\n        super().__init__()\n        self.enc1 = nn.Sequential(\n            nn.Conv2d(3,64,3,padding=1), nn.ReLU(),\n            nn.Conv2d(64,64,3,padding=1), nn.ReLU()\n        )\n        self.pool = nn.MaxPool2d(2)\n        self.enc2 = nn.Sequential(\n            nn.Conv2d(64,128,3,padding=1), nn.ReLU(),\n            nn.Conv2d(128,128,3,padding=1), nn.ReLU()\n        )\n        self.up = nn.ConvTranspose2d(128,64,2,2)\n        self.dec = nn.Sequential(\n            nn.Conv2d(128,64,3,padding=1), nn.ReLU(),\n            nn.Conv2d(64,64,3,padding=1), nn.ReLU()\n        )\n        self.final = nn.Conv2d(64,out_channels,1)\n\n    def forward(self,x):\n        x1=self.enc1(x)\n        x2=self.enc2(self.pool(x1))\n        x3=self.up(x2)\n        x4=torch.cat([x3,x1],1)\n        return self.final(self.dec(x4))\n\ndevice = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\n\nmodel = UNet()\nmodel.load_state_dict(torch.load(\"seg_model.pth\", map_location=device))\nmodel.to(device).eval()\n\ntransform = transforms.Compose([\n    transforms.Resize((256,256)),\n    transforms.ToTensor(),\n    transforms.Normalize([0.5]*3,[0.5]*3)\n])\n\n# ---- INPUT ----\nif Path(\"/kaggle/input\").exists():\n    img_path = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/data/data/test/t2.jpg\"\nelse:\n    import tkinter as tk\n    from tkinter import filedialog\n    root=tk.Tk(); root.withdraw()\n    img_path=filedialog.askopenfilename()\n\nimg = Image.open(img_path).convert(\"RGB\")\nx = transform(img).unsqueeze(0).to(device)\n\n# ---- PREDICT ----\nwith torch.no_grad():\n    out = torch.sigmoid(model(x))\n    out = (out > 0.3).float()\n\nmask = out.squeeze().cpu().numpy()\n\ndisc = (mask[0]*255).astype(np.uint8)\ncup  = (mask[1]*255).astype(np.uint8)\n\ndisc = np.array(Image.fromarray(disc).resize((img.width,img.height)))\ncup  = np.array(Image.fromarray(cup).resize((img.width,img.height)))\n\n# ---- DISPLAY ----\nplt.figure(figsize=(15,5))\n\nplt.subplot(1,3,1)\nplt.imshow(img); plt.title(\"Original\"); plt.axis(\"off\")\n\nplt.subplot(1,3,2)\nplt.imshow(img); plt.imshow(disc,alpha=0.4,cmap=\"Blues\")\nplt.title(\"Disc\"); plt.axis(\"off\")\n\nplt.subplot(1,3,3)\nplt.imshow(img); plt.imshow(cup,alpha=0.4,cmap=\"Reds\")\nplt.title(\"Cup\"); plt.axis(\"off\")\n\nplt.show()","metadata":{"trusted":true},"outputs":[],"execution_count":null},{"cell_type":"code","source":"import os\n\nfor root, dirs, files in os.walk(\"/kaggle/input\"):\n    print(root)\n    ","metadata":{"trusted":true},"outputs":[],"execution_count":null},{"cell_type":"code","source":"import os\n\nmask_dir = \"/kaggle/input/datasets/avinashreddy2309/glaucoma-detection/seg_data/seg_data/masks\"\n\nprint(os.listdir(mask_dir)[:10])","metadata":{"trusted":true},"outputs":[],"execution_count":null}]}
+import os
+import random
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision.transforms import ColorJitter
+from torchvision.transforms import functional as TF
+from torchvision.transforms.functional import InterpolationMode
+from torch.utils.data import Dataset, DataLoader
+from PIL import Image
+import numpy as np
+import matplotlib.pyplot as plt
+
+from seg_model import create_segmentation_model
+
+
+SEED = 42
+IMAGE_SIZE = 256
+BATCH_SIZE = 4
+EPOCHS = 50
+VAL_RATIO = 0.1
+
+FULL_FUNDUS_DIR = os.getenv("FULL_FUNDUS_DIR", "/Users/avinash/Downloads/full-fundus")
+OPTIC_CUP_DIR = os.getenv("OPTIC_CUP_DIR", "/Users/avinash/Downloads/optic-cup")
+OPTIC_DISC_DIR = os.getenv("OPTIC_DISC_DIR", "/Users/avinash/Downloads/optic-disc")
+
+SEG_MODEL_ARCH = os.getenv("SEG_MODEL_ARCH", "deeplabv3plus").strip().lower()
+SEG_MODEL_ENCODER = os.getenv("SEG_MODEL_ENCODER", "resnet34")
+SEG_MODEL_PATH = os.getenv(
+    "SEG_MODEL_PATH",
+    "seg_model.pth" if SEG_MODEL_ARCH == "unet" else f"seg_model_{SEG_MODEL_ARCH}.pth",
+)
+
+print("\n[SEG-TRAIN DEBUG] Startup configuration", flush=True)
+print(f"[SEG-TRAIN DEBUG] Script: {os.path.abspath(__file__)}", flush=True)
+print(f"[SEG-TRAIN DEBUG] Model architecture: {SEG_MODEL_ARCH}", flush=True)
+print(f"[SEG-TRAIN DEBUG] Backbone encoder: {SEG_MODEL_ENCODER}", flush=True)
+print(f"[SEG-TRAIN DEBUG] Checkpoint path: {SEG_MODEL_PATH}\n", flush=True)
+
+
+def set_seed(seed=SEED):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+
+class SegDataset(Dataset):
+    def __init__(self, samples, augment=False):
+        self.samples = samples
+        self.augment = augment
+
+        self.color_jitter = ColorJitter(
+            brightness=0.2,
+            contrast=0.2,
+            saturation=0.15,
+            hue=0.03,
+        )
+
+    def __len__(self):
+        return len(self.samples)
+
+    def _joint_augment(self, image, disc_mask, cup_mask):
+        # Simulate full-frame fundus by random zoom-in crop (removes black border in many samples).
+        if random.random() < 0.45:
+            img_w, img_h = image.size
+            scale = random.uniform(0.65, 0.95)
+            crop_w = max(32, int(img_w * scale))
+            crop_h = max(32, int(img_h * scale))
+
+            left = random.randint(0, max(0, img_w - crop_w))
+            top = random.randint(0, max(0, img_h - crop_h))
+
+            image = TF.crop(image, top, left, crop_h, crop_w)
+            disc_mask = TF.crop(disc_mask, top, left, crop_h, crop_w)
+            cup_mask = TF.crop(cup_mask, top, left, crop_h, crop_w)
+
+        if random.random() < 0.5:
+            image = TF.hflip(image)
+            disc_mask = TF.hflip(disc_mask)
+            cup_mask = TF.hflip(cup_mask)
+
+        if random.random() < 0.2:
+            image = TF.vflip(image)
+            disc_mask = TF.vflip(disc_mask)
+            cup_mask = TF.vflip(cup_mask)
+
+        angle = random.uniform(-18, 18)
+        image = TF.rotate(
+            image,
+            angle=angle,
+            interpolation=InterpolationMode.BILINEAR,
+            fill=0,
+        )
+        disc_mask = TF.rotate(
+            disc_mask,
+            angle=angle,
+            interpolation=InterpolationMode.NEAREST,
+            fill=0,
+        )
+        cup_mask = TF.rotate(
+            cup_mask,
+            angle=angle,
+            interpolation=InterpolationMode.NEAREST,
+            fill=0,
+        )
+
+        max_shift = int(0.05 * min(image.size))
+        tx = random.randint(-max_shift, max_shift)
+        ty = random.randint(-max_shift, max_shift)
+        scale = random.uniform(0.95, 1.05)
+
+        image = TF.affine(
+            image,
+            angle=0,
+            translate=(tx, ty),
+            scale=scale,
+            shear=0,
+            interpolation=InterpolationMode.BILINEAR,
+            fill=0,
+        )
+        disc_mask = TF.affine(
+            disc_mask,
+            angle=0,
+            translate=(tx, ty),
+            scale=scale,
+            shear=0,
+            interpolation=InterpolationMode.NEAREST,
+            fill=0,
+        )
+        cup_mask = TF.affine(
+            cup_mask,
+            angle=0,
+            translate=(tx, ty),
+            scale=scale,
+            shear=0,
+            interpolation=InterpolationMode.NEAREST,
+            fill=0,
+        )
+
+        image = self.color_jitter(image)
+        return image, disc_mask, cup_mask
+
+    def __getitem__(self, idx):
+        sample = self.samples[idx]
+        img_path = sample["image"]
+        cup_path = sample["cup"]
+        disc_path = sample["disc"]
+        sample_name = sample["name"]
+
+        if not os.path.exists(img_path) or not os.path.exists(cup_path) or not os.path.exists(disc_path):
+            raise FileNotFoundError(f"Missing file in sample {sample_name}")
+
+        image = Image.open(img_path).convert("RGB")
+        cup_mask = Image.open(cup_path).convert("L")
+        disc_mask = Image.open(disc_path).convert("L")
+
+        if image.size != cup_mask.size or image.size != disc_mask.size:
+            raise ValueError(
+                f"Size mismatch in {sample_name}: image={image.size}, cup={cup_mask.size}, disc={disc_mask.size}"
+            )
+
+        if self.augment:
+            image, disc_mask, cup_mask = self._joint_augment(image, disc_mask, cup_mask)
+
+        image = TF.resize(
+            image,
+            [IMAGE_SIZE, IMAGE_SIZE],
+            interpolation=InterpolationMode.BILINEAR,
+            antialias=True,
+        )
+        disc_mask = TF.resize(
+            disc_mask,
+            [IMAGE_SIZE, IMAGE_SIZE],
+            interpolation=InterpolationMode.NEAREST,
+        )
+        cup_mask = TF.resize(
+            cup_mask,
+            [IMAGE_SIZE, IMAGE_SIZE],
+            interpolation=InterpolationMode.NEAREST,
+        )
+
+        image_tensor = TF.to_tensor(image)
+
+        disc_raw = np.array(disc_mask, dtype=np.float32)
+        cup_raw = np.array(cup_mask, dtype=np.float32)
+
+        disc_bin = (disc_raw > 0).astype(np.float32)
+        cup_bin = (cup_raw > 0).astype(np.float32)
+
+        mask_2ch = np.stack([disc_bin, cup_bin], axis=0)
+        mask_tensor = torch.from_numpy(mask_2ch)
+
+        return image_tensor, mask_tensor
+
+
+def _list_images(folder_path):
+    return sorted([
+        f for f in os.listdir(folder_path)
+        if f.lower().endswith((".jpg", ".jpeg", ".png")) and not f.startswith(".")
+    ])
+
+
+def _to_name_map(folder_path):
+    name_map = {}
+    for filename in _list_images(folder_path):
+        basename = os.path.splitext(filename)[0]
+        name_map[basename] = os.path.join(folder_path, filename)
+    return name_map
+
+
+def build_triplet_samples(image_dir, cup_dir, disc_dir):
+    image_map = _to_name_map(image_dir)
+    cup_map = _to_name_map(cup_dir)
+    disc_map = _to_name_map(disc_dir)
+
+    image_names = set(image_map.keys())
+    cup_names = set(cup_map.keys())
+    disc_names = set(disc_map.keys())
+
+    matched = sorted(image_names & cup_names & disc_names)
+    missing_cup = sorted(image_names - cup_names)
+    missing_disc = sorted(image_names - disc_names)
+
+    samples = [
+        {
+            "name": name,
+            "image": image_map[name],
+            "cup": cup_map[name],
+            "disc": disc_map[name],
+        }
+        for name in matched
+    ]
+
+    report = {
+        "image_total": len(image_names),
+        "cup_total": len(cup_names),
+        "disc_total": len(disc_names),
+        "matched_total": len(matched),
+        "missing_cup_total": len(missing_cup),
+        "missing_disc_total": len(missing_disc),
+    }
+
+    return samples, report
+
+
+class DiceBCELoss(nn.Module):
+    def __init__(self):
+        super(DiceBCELoss, self).__init__()
+        self.bce = nn.BCEWithLogitsLoss()
+
+    def forward(self, inputs, targets, smooth=1.0):
+        bce_loss = self.bce(inputs, targets)
+        probs = torch.sigmoid(inputs)
+
+        probs_flat = probs.view(-1)
+        targets_flat = targets.view(-1)
+
+        intersection = (probs_flat * targets_flat).sum()
+        dice_loss = 1 - (2.0 * intersection + smooth) / (
+            probs_flat.sum() + targets_flat.sum() + smooth
+        )
+
+        return bce_loss + dice_loss
+
+
+def batch_metrics_from_logits(logits, targets, threshold=0.5, eps=1e-6):
+    probs = torch.sigmoid(logits)
+    preds = (probs >= threshold).float()
+
+    pixel_acc = (preds == targets).float().mean().item()
+
+    disc_acc = (preds[:, 0] == targets[:, 0]).float().mean().item()
+    cup_acc = (preds[:, 1] == targets[:, 1]).float().mean().item()
+
+    disc_inter = (preds[:, 0] * targets[:, 0]).sum()
+    disc_union = preds[:, 0].sum() + targets[:, 0].sum()
+    disc_dice = ((2.0 * disc_inter + eps) / (disc_union + eps)).item()
+
+    cup_inter = (preds[:, 1] * targets[:, 1]).sum()
+    cup_union = preds[:, 1].sum() + targets[:, 1].sum()
+    cup_dice = ((2.0 * cup_inter + eps) / (cup_union + eps)).item()
+
+    return pixel_acc, disc_acc, cup_acc, disc_dice, cup_dice
+
+
+set_seed()
+
+# ---- DATA ----
+all_samples, pairing_report = build_triplet_samples(
+    FULL_FUNDUS_DIR,
+    OPTIC_CUP_DIR,
+    OPTIC_DISC_DIR,
+)
+
+print("\nTriplet pairing report")
+print(f"  Full-fundus images : {pairing_report['image_total']}")
+print(f"  Optic-cup masks    : {pairing_report['cup_total']}")
+print(f"  Optic-disc masks   : {pairing_report['disc_total']}")
+print(f"  Matched triplets   : {pairing_report['matched_total']}")
+print(f"  Missing cup masks  : {pairing_report['missing_cup_total']}")
+print(f"  Missing disc masks : {pairing_report['missing_disc_total']}")
+
+if len(all_samples) < 10:
+    raise ValueError("Need at least 10 images to create a stable train/val split.")
+
+random.shuffle(all_samples)
+val_count = max(1, int(len(all_samples) * VAL_RATIO))
+val_samples = all_samples[:val_count]
+train_samples = all_samples[val_count:]
+
+train_dataset = SegDataset(train_samples, augment=True)
+val_dataset = SegDataset(val_samples, augment=False)
+
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
+print(f"Train images: {len(train_dataset)} | Val images: {len(val_dataset)}")
+
+# ---- MODEL ----
+model = create_segmentation_model(
+    arch=SEG_MODEL_ARCH,
+    out_channels=2,
+    encoder_name=SEG_MODEL_ENCODER,
+    encoder_weights="imagenet",
+)
+print(f"Model architecture: {SEG_MODEL_ARCH}")
+if SEG_MODEL_ARCH in {"deeplabv3+", "deeplabv3plus"}:
+    print(f"Backbone encoder: {SEG_MODEL_ENCODER}")
+
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
+    print("Using Apple M1 GPU (MPS)")
+else:
+    device = torch.device("cpu")
+    print("Using CPU")
+
+model.to(device)
+
+criterion = DiceBCELoss()
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
+
+train_losses = []
+val_losses = []
+best_val = float("inf")
+patience = 8
+no_improve = 0
+
+# ---- TRAINING ----
+for epoch in range(EPOCHS):
+    model.train()
+    train_total = 0.0
+    train_batches = 0
+    train_acc_total = 0.0
+    train_disc_acc_total = 0.0
+    train_cup_acc_total = 0.0
+    train_disc_dice_total = 0.0
+    train_cup_dice_total = 0.0
+
+    for images, masks in train_loader:
+        images = images.to(device)
+        masks = masks.to(device)
+
+        outputs = model(images)
+        loss = criterion(outputs, masks)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        train_total += loss.item()
+        train_batches += 1
+
+        with torch.no_grad():
+            m = batch_metrics_from_logits(outputs.detach(), masks)
+            train_acc_total += m[0]
+            train_disc_acc_total += m[1]
+            train_cup_acc_total += m[2]
+            train_disc_dice_total += m[3]
+            train_cup_dice_total += m[4]
+
+    avg_train_loss = train_total / max(1, train_batches)
+    avg_train_acc = train_acc_total / max(1, train_batches)
+    avg_train_disc_acc = train_disc_acc_total / max(1, train_batches)
+    avg_train_cup_acc = train_cup_acc_total / max(1, train_batches)
+    avg_train_disc_dice = train_disc_dice_total / max(1, train_batches)
+    avg_train_cup_dice = train_cup_dice_total / max(1, train_batches)
+    train_losses.append(avg_train_loss)
+
+    model.eval()
+    val_total = 0.0
+    val_batches = 0
+    val_acc_total = 0.0
+    val_disc_acc_total = 0.0
+    val_cup_acc_total = 0.0
+    val_disc_dice_total = 0.0
+    val_cup_dice_total = 0.0
+
+    with torch.no_grad():
+        for images, masks in val_loader:
+            images = images.to(device)
+            masks = masks.to(device)
+            outputs = model(images)
+            loss = criterion(outputs, masks)
+            val_total += loss.item()
+            val_batches += 1
+
+            m = batch_metrics_from_logits(outputs, masks)
+            val_acc_total += m[0]
+            val_disc_acc_total += m[1]
+            val_cup_acc_total += m[2]
+            val_disc_dice_total += m[3]
+            val_cup_dice_total += m[4]
+
+    avg_val_loss = val_total / max(1, val_batches)
+    avg_val_acc = val_acc_total / max(1, val_batches)
+    avg_val_disc_acc = val_disc_acc_total / max(1, val_batches)
+    avg_val_cup_acc = val_cup_acc_total / max(1, val_batches)
+    avg_val_disc_dice = val_disc_dice_total / max(1, val_batches)
+    avg_val_cup_dice = val_cup_dice_total / max(1, val_batches)
+    val_losses.append(avg_val_loss)
+
+    print(
+        f"Epoch {epoch + 1:02d}/{EPOCHS} | "
+        f"Train Loss: {avg_train_loss:.6f} | "
+        f"Val Loss: {avg_val_loss:.6f} | "
+        f"Train Acc: {avg_train_acc:.4f} | "
+        f"Val Acc: {avg_val_acc:.4f} | "
+        f"Train Disc Acc: {avg_train_disc_acc:.4f} | "
+        f"Train Cup Acc: {avg_train_cup_acc:.4f} | "
+        f"Val Disc Acc: {avg_val_disc_acc:.4f} | "
+        f"Val Cup Acc: {avg_val_cup_acc:.4f} | "
+        f"Train Disc Dice: {avg_train_disc_dice:.4f} | "
+        f"Train Cup Dice: {avg_train_cup_dice:.4f} | "
+        f"Val Disc Dice: {avg_val_disc_dice:.4f} | "
+        f"Val Cup Dice: {avg_val_cup_dice:.4f}"
+    )
+
+    if avg_val_loss < best_val:
+        best_val = avg_val_loss
+        no_improve = 0
+        torch.save(model.state_dict(), SEG_MODEL_PATH)
+        print(f"  Saved best model -> {SEG_MODEL_PATH}")
+    else:
+        no_improve += 1
+        if no_improve >= patience:
+            print("Early stopping triggered.")
+            break
+
+print(f"\nTraining complete. Best Val Loss: {best_val:.6f}")
+
+plt.figure(figsize=(8, 5))
+plt.plot(train_losses, label="Train Loss")
+plt.plot(val_losses, label="Val Loss")
+plt.title("Segmentation Loss")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.legend()
+plt.tight_layout()
+plt.show()
