@@ -13,10 +13,18 @@ The classification path gives a direct diagnostic label, while segmentation supp
 
 ### 1. Classification
 
-- Model: EfficientNet-B0 (PyTorch)
+- Model: EfficientNet backbone (PyTorch; default training config uses EfficientNet-B4)
 - Training script: `train.py`
 - Inference script: `predict.py`
 - Classes: `glaucoma`, `normal`
+
+EfficientNet-B0 and EfficientNet-B4 are both **EfficientNet family CNN backbones**.  
+They are **compound-scaled CNNs** built with **MBConv (mobile inverted bottleneck/inverted residual) blocks** and **squeeze-and-excitation (SE)** channel attention, derived from MobileNet-style design (MobileNetV2/MobileNet).  
+
+- **EfficientNet-B0**: baseline EfficientNet architecture (smallest standard variant).
+- **EfficientNet-B4**: a larger compound-scaled variant of B0 (deeper/wider/higher-resolution), usually more accurate but more computationally expensive.
+
+In practice, these models are commonly used as **feature extractors/backbones** for image classification and transfer learning, including glaucoma-vs-normal classification.
 
 ### 2. Segmentation
 
