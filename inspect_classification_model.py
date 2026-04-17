@@ -27,7 +27,7 @@ def main() -> int:
 
     top_level_layers = len(list(model.children()))
     efficientnet_internal_modules = sum(1 for _ in model.modules())
-    dense_layers_info = [(name, layer.out_features) for name, layer in model.named_modules() if isinstance(layer, nn.Linear)]
+    linear_layers_info = [(name, layer.out_features) for name, layer in model.named_modules() if isinstance(layer, nn.Linear)]
     output_units = model._fc.out_features
 
     print("=== EfficientNet-B4 classification model inspection ===")
@@ -37,7 +37,7 @@ def main() -> int:
     print(model)
     print(f"\nTotal top-level model layers (len(list(model.children()))): {top_level_layers}")
     print(f"EfficientNet-B4 internal module count (sum(1 for _ in model.modules())): {efficientnet_internal_modules}")
-    print(f"Head Dense layers and units: {dense_layers_info}")
+    print(f"Head Linear layers and units: {linear_layers_info}")
     print(f"Output layer units (num_classes): {output_units}")
     return 0
 

@@ -105,7 +105,7 @@ This prints:
 - include-top equivalent status
 - top-level model layer count
 - internal EfficientNet-B4 module count
-- Dense/Linear head units and output units (`num_classes`)
+- Linear head units (Dense-equivalent) and output units (`num_classes`)
 
 ### Run classifier on one image
 
