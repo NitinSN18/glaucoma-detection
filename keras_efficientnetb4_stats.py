@@ -8,6 +8,17 @@ from tensorflow import keras
 
 
 def build_keras_model(input_size: int, num_classes: int) -> tuple[keras.Model, keras.Model]:
+    """Build EfficientNet-B4 classifier and return (full_model, backbone_model).
+
+    Args:
+        input_size: Square input image size (e.g., 224 for 224x224x3).
+        num_classes: Number of output classes for the final Dense layer.
+
+    Returns:
+        Tuple of:
+            - full classifier model (EfficientNet-B4 + GAP + Dense head)
+            - EfficientNet-B4 backbone submodel
+    """
     inputs = keras.Input(shape=(input_size, input_size, 3), name="input_image")
     base_model = keras.applications.EfficientNetB4(
         include_top=False,
@@ -45,7 +56,7 @@ def main() -> int:
     dense_units = [layer.units for layer in model.layers if isinstance(layer, keras.layers.Dense)]
     top_level_layers = len(model.layers)
     efficientnet_internal_layers = len(base_model.layers)
-    expanded_total_layers = efficientnet_internal_layers + 2  # GAP + Dense head
+    expanded_total_layers = efficientnet_internal_layers + 2  # GAP + Dense; Input is already in base.
 
     print("\n=== Computed counts ===")
     print(f"Top-level Keras model layers (len(model.layers)): {top_level_layers}")
