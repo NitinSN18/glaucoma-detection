@@ -13,7 +13,7 @@ The classification path gives a direct diagnostic label, while segmentation supp
 
 ### 1. Classification
 
-- Model: EfficientNet-B0 (PyTorch)
+- Model: EfficientNet-B4 (PyTorch)
 - Training script: `train.py`
 - Inference script: `predict.py`
 - Classes: `glaucoma`, `normal`
@@ -85,6 +85,40 @@ source .venv/bin/activate
 ```
 
 Then run the scripts with `python`, not the system `python3`, so the installed packages are available.
+
+## EfficientNet-B4 layer / neuron count (Keras reference)
+
+The classification model is defined in `train.py`:
+
+- `build_model()` uses `EfficientNet.from_pretrained("efficientnet-b4")`
+- final classifier head is replaced with `nn.Linear(..., 2)` (2 output neurons/classes)
+
+If you need Keras-style layer and neuron counts for reporting, run:
+
+```bash
+pip install tensorflow-cpu
+python keras_efficientnetb4_stats.py
+```
+
+This prints:
+
+- `model.summary()`
+- `len(model.layers)` (top-level Keras layers)
+- EfficientNetB4 submodel internal layer count (`len(base_model.layers)`)
+- Dense units (neurons), e.g. `[2]`
+- optional parameter counts (`total/trainable/non-trainable`)
+
+Default output values (`--input-size 224 --num-classes 2`) are:
+
+- Top-level Keras layers: **4**
+- EfficientNetB4 internal layers: **474**
+- Expanded total (EfficientNet internals + GAP + Dense): **476**
+- Dense units (neurons): **[2]**
+
+In this context:
+
+- **Layers** = architectural building blocks (Input, EfficientNet backbone, pooling, Dense, etc.).
+- **Neurons** usually means **Dense units** in the classifier head (here, final Dense has 2 units).
 
 ## Usage
 
