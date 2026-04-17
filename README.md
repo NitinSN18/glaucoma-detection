@@ -19,7 +19,7 @@ The classification path gives a direct diagnostic label, while segmentation supp
 - Classes: `glaucoma`, `normal`
 
 EfficientNet-B0 and EfficientNet-B4 are both **EfficientNet family CNN backbones**.  
-They are **compound-scaled CNNs** built with **MBConv (mobile inverted bottleneck/inverted residual) blocks** and **squeeze-and-excitation (SE)** channel attention, derived from MobileNet-style design (MobileNetV2/MobileNet).  
+They are **compound-scaled CNNs** built with **MBConv (mobile inverted bottleneck/inverted residual) blocks** and **squeeze-and-excitation (SE)** channel attention, derived from MobileNetV2-style design.  
 
 - **EfficientNet-B0**: baseline EfficientNet architecture (smallest standard variant).
 - **EfficientNet-B4**: a larger compound-scaled variant of B0 (deeper/wider/higher-resolution), usually more accurate but more computationally expensive.
