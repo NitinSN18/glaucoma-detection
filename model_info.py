@@ -19,7 +19,11 @@ def build_classification_model() -> nn.Module:
 
 
 def leaf_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
-    return [(name, module) for name, module in model.named_modules() if name and not list(module.children())]
+    return [
+        (name, module)
+        for name, module in model.named_modules()
+        if name and next(module.children(), None) is None
+    ]
 
 
 def dense_layers(model: nn.Module) -> list[tuple[str, nn.Linear]]:

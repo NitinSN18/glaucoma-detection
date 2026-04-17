@@ -110,8 +110,8 @@ This prints:
 - EfficientNet-B4 base config (`include_top`)
 - the repository head change (`_fc` replaced with `Linear(..., 2)`)
 - layer counts using two definitions:
-	- all modules except the root module
-	- leaf layers (modules with no children)
+  - all modules except the root module
+  - leaf layers (modules with no children)
 - dense layer units (`out_features`, i.e., neuron count)
 - total/trainable parameters and linear-layer parameter formula
 
