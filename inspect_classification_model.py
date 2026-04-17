@@ -11,15 +11,18 @@ except ModuleNotFoundError as exc:
     ) from exc
 
 
+MODEL_NAME = "efficientnet-b4"
+
+
 def build_classification_model() -> nn.Module:
     # Mirrors train.py architecture while avoiding pretrained weight download.
-    model = EfficientNet.from_name("efficientnet-b4")
+    model = EfficientNet.from_name(MODEL_NAME)
     model._fc = nn.Linear(model._fc.in_features, 2)
     return model
 
 
 def main() -> int:
-    base_model = EfficientNet.from_name("efficientnet-b4")
+    base_model = EfficientNet.from_name(MODEL_NAME)
     include_top_equivalent = isinstance(base_model._fc, nn.Linear)
     original_output_units = base_model._fc.out_features
 
@@ -37,7 +40,8 @@ def main() -> int:
     print(model)
     print(f"\nTotal top-level model layers (len(list(model.children()))): {top_level_layers}")
     print(f"EfficientNet-B4 internal module count (sum(1 for _ in model.modules())): {efficientnet_internal_modules}")
-    print(f"Head Linear layers and units: {linear_layers_info}")
+    linear_layers_text = ", ".join(f"{name}={units}" for name, units in linear_layers_info) or "None"
+    print(f"Head Linear layers and units: {linear_layers_text}")
     print(f"Output layer units (num_classes): {output_units}")
     return 0
 
