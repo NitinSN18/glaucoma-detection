@@ -13,7 +13,7 @@ The classification path gives a direct diagnostic label, while segmentation supp
 
 ### 1. Classification
 
-- Model: EfficientNet-B0 (PyTorch)
+- Model: EfficientNet-B4 (PyTorch)
 - Training script: `train.py`
 - Inference script: `predict.py`
 - Classes: `glaucoma`, `normal`
@@ -99,6 +99,28 @@ python train.py
 ```bash
 python predict.py
 ```
+
+### Inspect EfficientNet-B4 layer and neuron counts
+
+```bash
+python model_info.py
+```
+
+This prints:
+- EfficientNet-B4 base config (`include_top`)
+- the repository head change (`_fc` replaced with `Linear(..., 2)`)
+- layer counts using two definitions:
+	- all modules except the root module
+	- leaf layers (modules with no children)
+- dense layer units (`out_features`, i.e., neuron count)
+- total/trainable parameters and linear-layer parameter formula
+
+Current output for this repository configuration:
+- `include_top=True` in EfficientNet global params
+- modules excluding root: `485`
+- leaf layers: `292`
+- final dense layer (`_fc`) neurons/units: `2` (`in_features=1792`, `out_features=2`)
+- total/trainable parameters: `17,552,202`
 
 ### Train segmentation model
 
