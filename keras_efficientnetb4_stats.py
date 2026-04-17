@@ -56,7 +56,8 @@ def main() -> int:
     dense_units = [layer.units for layer in model.layers if isinstance(layer, keras.layers.Dense)]
     top_level_layers = len(model.layers)
     efficientnet_internal_layers = len(base_model.layers)
-    expanded_total_layers = efficientnet_internal_layers + 2  # GAP + Dense; Input is already in base.
+    # base_model.layers already contains EfficientNet's own InputLayer, so add only GAP + Dense.
+    expanded_total_layers = efficientnet_internal_layers + 2
 
     print("\n=== Computed counts ===")
     print(f"Top-level Keras model layers (len(model.layers)): {top_level_layers}")

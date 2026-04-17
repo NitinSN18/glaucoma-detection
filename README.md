@@ -93,6 +93,8 @@ The classification model is defined in `train.py`:
 - `build_model()` uses `EfficientNet.from_pretrained("efficientnet-b4")`
 - final classifier head is replaced with `nn.Linear(..., 2)` (2 output neurons/classes)
 
+This is the training/inference model used by the repo (PyTorch). The Keras script below is a reporting aid to print Keras-style layer and neuron counts.
+
 If you need Keras-style layer and neuron counts for reporting, run:
 
 ```bash
