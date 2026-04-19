@@ -36,35 +36,151 @@
                     <p class="subtitle">AI-assisted retinal analysis for rapid glaucoma screening workflow.</p>
                 </div>
                 <div class="header-controls">
-                    <label class="mode-control" for="visual-mode-select">
-                        <span>Visual Mode</span>
-                        <select id="visual-mode-select">
-                            <option value="day">Day</option>
-                            <option value="night" selected>Night</option>
-                        </select>
-                    </label>
+                    <button class="icon-btn" id="settings-btn" type="button" aria-label="Open settings">
+                        <span class="gear-icon">⚙</span>
+                        <span>Settings</span>
+                    </button>
                 </div>
             </div>
-            <div class="health-indicator">
-                <span id="status-indicator" class="status"></span>
-                <span id="status-text">Initializing...</span>
+            <div class="health-panel">
+                <div class="health-indicator">
+                    <span id="status-indicator" class="status"></span>
+                    <span id="status-text">Initializing...</span>
+                </div>
+                <label class="mode-control" for="visual-mode-select">
+                    <span>Visual Mode</span>
+                    <select id="visual-mode-select">
+                        <option value="day">Day</option>
+                        <option value="night" selected>Night</option>
+                    </select>
+                </label>
             </div>
         </header>
-
-        <div class="disclaimer">
-            <strong>Important Disclaimer:</strong> This tool is for informational and research purposes only. It is <strong>NOT</strong> a substitute for professional medical diagnosis. Always consult a qualified ophthalmologist for medical advice.
-        </div>
 
         <nav class="menu-tabs">
             <button class="tab-button active" data-tab="single-analysis">Single Image</button>
             <button class="tab-button" data-tab="batch-analysis">Batch Processing</button>
             <button class="tab-button" data-tab="workplace">Workplace</button>
+            <button class="tab-button" data-tab="logbook">Patient Logbook</button>
             <button class="tab-button" data-tab="history">Results History</button>
         </nav>
 
         <div id="single-analysis" class="tab-content active">
             <div class="content-grid analysis-grid">
                 <div class="card">
+                    <div class="patient-card">
+                        <div class="section-title-row">
+                            <h3>Patient Details</h3>
+                            <button class="btn-secondary btn-compact" id="save-patient-btn" type="button">Save to Logbook</button>
+                        </div>
+                        <div class="patient-form-grid">
+                            <div class="form-field">
+                                <label for="patient-first-name">First Name *</label>
+                                <input id="patient-first-name" type="text" placeholder="Enter first name" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-last-name">Last Name *</label>
+                                <input id="patient-last-name" type="text" placeholder="Enter last name" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-id">Patient ID</label>
+                                <input id="patient-id" type="text" placeholder="Hospital patient ID">
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-age">Age *</label>
+                                <input id="patient-age" type="number" min="1" max="120" placeholder="Age" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-gender">Gender *</label>
+                                <select id="patient-gender" required>
+                                    <option value="">Select</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-email">Email</label>
+                                <input id="patient-email" type="email" placeholder="Enter email">
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-phone">Phone</label>
+                                <input id="patient-phone" type="text" placeholder="Enter phone number">
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-eye">Eye Under Examination</label>
+                                <select id="patient-eye">
+                                    <option value="">Select</option>
+                                    <option value="left">Left Eye</option>
+                                    <option value="right">Right Eye</option>
+                                    <option value="both">Both Eyes</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-diabetes">Diabetes</label>
+                                <select id="patient-diabetes">
+                                    <option value="">Unknown</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-hypertension">Hypertension</label>
+                                <select id="patient-hypertension">
+                                    <option value="">Unknown</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-family-history">Family History of Glaucoma</label>
+                                <select id="patient-family-history">
+                                    <option value="">Unknown</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-allergies">Known Allergies</label>
+                                <select id="patient-allergies">
+                                    <option value="">Unknown</option>
+                                    <option value="no">No</option>
+                                    <option value="yes">Yes</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-allergy-details">If yes, allergy details</label>
+                                <input id="patient-allergy-details" type="text" placeholder="Drug or substance allergies">
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-medications">Current Ocular/Systemic Medications</label>
+                                <input id="patient-medications" type="text" placeholder="E.g. timolol, steroids, etc.">
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-eye-surgery">Past Eye Surgery</label>
+                                <select id="patient-eye-surgery">
+                                    <option value="">Unknown</option>
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="patient-chief-complaint">Chief Complaint</label>
+                                <input id="patient-chief-complaint" type="text" placeholder="Blurred vision, headache, etc.">
+                            </div>
+                            <div class="form-field span-all">
+                                <label for="patient-notes">Clinical Notes</label>
+                                <textarea id="patient-notes" rows="2" placeholder="IOP, optic nerve findings, follow-up plan"></textarea>
+                            </div>
+                            <div class="form-field span-all checkbox-field">
+                                <label>
+                                    <input id="save-logbook-checkbox" type="checkbox" checked>
+                                    Save this analysis with patient details to logbook
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <h2>Upload Retinal Image</h2>
                     <div class="upload-area" id="single-upload-area">
                         <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -79,7 +195,7 @@
 
                     <div id="single-preview" class="image-preview hidden">
                         <img id="single-preview-img" alt="Preview">
-                        <button class="btn-secondary" onclick="resetSingleImage()">Remove</button>
+                        <button class="btn-secondary btn-compact" onclick="resetSingleImage()">Remove</button>
                     </div>
 
                     <div class="analysis-mode">
@@ -102,98 +218,114 @@
                     </button>
                 </div>
 
-                <div class="card" id="results-card" style="display: none;">
+                <div class="card results-card" id="results-card" style="display: none;">
                     <h2>Analysis Results</h2>
-
-                    <div id="classification-results" style="display: none;">
-                        <h3>Diagnostic Classification</h3>
-                        <div class="result-box clickable" id="diagnostic-box" onclick="openDiagnosticModal()" style="cursor: pointer; transition: all 0.3s ease;">
-                            <div class="prediction">
-                                <span class="label">Diagnosis:</span>
-                                <span id="result-prediction" class="value"></span>
-                            </div>
-                            <div class="confidence-container">
-                                <span class="label">Confidence:</span>
-                                <div class="confidence-bar">
-                                    <div id="confidence-fill" class="confidence-fill"></div>
+                    <div class="results-layout">
+                        <div class="results-details-column">
+                            <div id="classification-results" style="display: none;">
+                                <h3>Diagnostic Classification</h3>
+                                <div class="result-box" id="diagnostic-box">
+                                    <div class="prediction">
+                                        <span class="label">Diagnosis:</span>
+                                        <span id="result-prediction" class="value"></span>
+                                    </div>
+                                    <div class="confidence-container">
+                                        <span class="label">Confidence:</span>
+                                        <div class="confidence-bar">
+                                            <div id="confidence-fill" class="confidence-fill"></div>
+                                        </div>
+                                        <span id="result-confidence" class="value">0%</span>
+                                    </div>
+                                    <div class="probabilities">
+                                        <p><strong>Probability Scores:</strong></p>
+                                        <div class="prob-row"><span>Glaucoma:</span><span id="prob-glaucoma">0%</span></div>
+                                        <div class="prob-row"><span>Normal:</span><span id="prob-normal">0%</span></div>
+                                    </div>
+                                    <div class="inline-metrics-grid">
+                                        <div class="inline-metric-item">
+                                            <span class="label">Sensitivity</span>
+                                            <span id="inline-sensitivity" class="value">N/A</span>
+                                        </div>
+                                        <div class="inline-metric-item">
+                                            <span class="label">Specificity</span>
+                                            <span id="inline-specificity" class="value">N/A</span>
+                                        </div>
+                                        <div class="inline-metric-item">
+                                            <span class="label">Cup-to-Disc Ratio</span>
+                                            <span id="inline-cdr" class="value">N/A</span>
+                                        </div>
+                                        <div class="inline-metric-item">
+                                            <span class="label">Severity</span>
+                                            <span id="inline-severity" class="value">N/A</span>
+                                        </div>
+                                    </div>
+                                    <div class="inline-recommendation">
+                                        <span class="label">Clinical Recommendation:</span>
+                                        <p id="inline-recommendation-text">N/A</p>
+                                    </div>
                                 </div>
-                                <span id="result-confidence" class="value">0%</span>
                             </div>
-                            <div class="probabilities">
-                                <p><strong>Probability Scores:</strong></p>
-                                <div class="prob-row"><span>Glaucoma:</span><span id="prob-glaucoma">0%</span></div>
-                                <div class="prob-row"><span>Normal:</span><span id="prob-normal">0%</span></div>
+
+                            <div class="result-box" id="patient-summary-box">
+                                <h3>Patient Snapshot</h3>
+                                <p id="patient-summary-text">Patient details will appear here after analysis.</p>
                             </div>
-                            <p style="text-align: center; margin-top: 10px; font-size: 0.85em; color: #888;">Click for detailed metrics</p>
+
+                            <div class="action-buttons">
+                                <button class="btn-secondary" id="download-results-btn">Download Results</button>
+                                <button class="btn-secondary" onclick="resetSingleImage()">Analyze Another</button>
+                            </div>
+                        </div>
+
+                        <div class="results-visual-column">
+                            <div id="segmentation-results" style="display: none;">
+                                <h3>Structural Segmentation</h3>
+                                <div id="segmentation-quality-warning" class="segmentation-warning hidden"></div>
+                                <div class="segmentation-display">
+                                    <div class="image-container">
+                                        <h4>Original Image</h4>
+                                        <img id="result-original" alt="Original Image">
+                                    </div>
+                                    <div class="image-container">
+                                        <h4>Segmentation Overlay</h4>
+                                        <div class="legend">
+                                            <span class="legend-item"><span class="color-disc"></span> Optic Disc</span>
+                                            <span class="legend-item"><span class="color-cup"></span> Optic Cup</span>
+                                        </div>
+                                        <img id="result-overlay" alt="Segmentation Overlay">
+                                    </div>
+                                </div>
+
+                                <div class="mask-detail">
+                                    <h4>Individual Masks</h4>
+                                    <div class="mask-row">
+                                        <div>
+                                            <p>Disc Mask</p>
+                                            <img id="result-disc-mask" alt="Disc Mask" style="max-width: 150px;">
+                                        </div>
+                                        <div>
+                                            <p>Cup Mask</p>
+                                            <img id="result-cup-mask" alt="Cup Mask" style="max-width: 150px;">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mask-detail">
+                                    <h4>Probability Heatmaps</h4>
+                                    <div class="mask-row">
+                                        <div>
+                                            <p>Disc Heatmap</p>
+                                            <img id="result-disc-heatmap" alt="Disc Heatmap" style="max-width: 150px;">
+                                        </div>
+                                        <div>
+                                            <p>Cup Heatmap</p>
+                                            <img id="result-cup-heatmap" alt="Cup Heatmap" style="max-width: 150px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <div id="segmentation-results" style="display: none;">
-                        <h3>Structural Segmentation</h3>
-                        <div id="segmentation-quality-warning" class="segmentation-warning hidden"></div>
-                        <div class="segmentation-display">
-                            <div class="image-container">
-                                <h4>Original Image</h4>
-                                <img id="result-original" alt="Original Image">
-                            </div>
-                            <div class="image-container">
-                                <h4>Segmentation Overlay</h4>
-                                <div class="legend">
-                                    <span class="legend-item"><span class="color-disc"></span> Optic Disc</span>
-                                    <span class="legend-item"><span class="color-cup"></span> Optic Cup</span>
-                                </div>
-                                <img id="result-overlay" alt="Segmentation Overlay">
-                            </div>
-                        </div>
-
-                        <div class="mask-detail">
-                            <h4>Individual Masks</h4>
-                            <div class="mask-row">
-                                <div>
-                                    <p>Disc Mask</p>
-                                    <img id="result-disc-mask" alt="Disc Mask" style="max-width: 150px;">
-                                </div>
-                                <div>
-                                    <p>Cup Mask</p>
-                                    <img id="result-cup-mask" alt="Cup Mask" style="max-width: 150px;">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mask-detail">
-                            <h4>Probability Heatmaps</h4>
-                            <div class="mask-row">
-                                <div>
-                                    <p>Disc Heatmap</p>
-                                    <img id="result-disc-heatmap" alt="Disc Heatmap" style="max-width: 150px;">
-                                </div>
-                                <div>
-                                    <p>Cup Heatmap</p>
-                                    <img id="result-cup-heatmap" alt="Cup Heatmap" style="max-width: 150px;">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="action-buttons">
-                        <button class="btn-secondary" id="download-results-btn">Download Results</button>
-                        <button class="btn-secondary" onclick="resetSingleImage()">Analyze Another</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="workflow-cards">
-                <div class="workflow-card">
-                    <span class="workflow-label">MODELS USED</span>
-                    <p>EfficientNet-B0 performs glaucoma classification. DeepLabV3+ segments optic disc and cup for structural evidence.</p>
-                </div>
-                <div class="workflow-card">
-                    <span class="workflow-label">HOW TO USE</span>
-                    <p id="current-workflow-text">Upload a clear fundus image, select analysis mode, run inference, then review confidence plus segmentation overlay.</p>
-                </div>
-                <div class="workflow-card">
-                    <span class="workflow-label">INTERPRETATION GUIDE</span>
-                    <p>Higher glaucoma probability with cup/disc structural changes should be reviewed by an ophthalmologist.</p>
                 </div>
             </div>
 
@@ -341,6 +473,19 @@
             </div>
         </div>
 
+        <div id="logbook" class="tab-content">
+            <div class="card">
+                <div class="section-title-row">
+                    <h2>Patient Logbook</h2>
+                    <button class="btn-secondary btn-compact" id="refresh-logbook-btn" type="button">Refresh</button>
+                </div>
+                <p class="education-intro">Saved patient profiles and analysis-linked records are listed here for follow-up and audit trail.</p>
+                <div id="logbook-container" class="logbook-container">
+                    <p style="color: #9bb3d4;">No patient records yet.</p>
+                </div>
+            </div>
+        </div>
+
         <div id="history" class="tab-content">
             <div class="card">
                 <h2>Results History</h2>
@@ -353,6 +498,47 @@
             </div>
         </div>
     </div>
+
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content settings-modal-content">
+            <span class="modal-close" id="settings-close">&times;</span>
+            <h2>Settings</h2>
+            <div class="settings-sections">
+                <section class="settings-section">
+                    <h3>Appearance</h3>
+                    <p>Switch between day and night visual modes from the header control under device readiness.</p>
+                </section>
+                <section class="settings-section">
+                    <h3>Help</h3>
+                    <p>Change analysis mode, upload a fundus image, and review confidence with segmentation overlays. Use Results History to revisit prior runs in this session.</p>
+                </section>
+                <section class="settings-section">
+                    <h3>Interpretation Guide</h3>
+                    <p>Higher glaucoma probability with cup/disc structural changes should always be reviewed by an ophthalmologist.</p>
+                </section>
+                <section class="settings-section">
+                    <h3>Disclaimer</h3>
+                    <p>This tool is for informational and research use only. It is not a substitute for professional medical diagnosis.</p>
+                </section>
+                <section class="settings-section">
+                    <h3>Account</h3>
+                    <button class="btn-secondary" id="logout-btn" type="button">Logout</button>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div id="disclaimer-modal" class="modal" style="display: none;">
+        <div class="modal-content disclaimer-modal-content">
+            <h2>Important Medical Disclaimer</h2>
+            <p>
+                This glaucoma detection system provides AI-assisted insights for informational purposes only.
+                It does not replace a qualified ophthalmologist's clinical diagnosis.
+            </p>
+            <button class="btn-primary" id="disclaimer-close-btn" type="button">I Understand</button>
+        </div>
+    </div>
+
     <!-- Diagnostic Modal -->
     <div id="diagnostic-modal" class="modal" style="display: none;">
         <div class="modal-content">
