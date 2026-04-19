@@ -24,6 +24,9 @@ body[data-theme="night"] {
     --line-soft: #213557;
     --accent: #5bd8e8;
     --accent-2: #37c8d5;
+    --workflow-card-bg-start: rgba(7, 20, 42, 0.98);
+    --workflow-card-bg-end: rgba(5, 16, 34, 0.98);
+    --workflow-card-text: #86a0c4;
 }
 
 body[data-theme="day"] {
@@ -38,6 +41,9 @@ body[data-theme="day"] {
     --line-soft: #cdb89f;
     --accent: #c98748;
     --accent-2: #b97538;
+    --workflow-card-bg-start: #6c5540;
+    --workflow-card-bg-end: #55412f;
+    --workflow-card-text: #e8d7c1;
 }
 
 html,
@@ -611,7 +617,7 @@ body {
 }
 
 .workflow-card {
-    background: linear-gradient(180deg, rgba(7, 20, 42, 0.98), rgba(5, 16, 34, 0.98));
+    background: linear-gradient(180deg, var(--workflow-card-bg-start) 0%, var(--workflow-card-bg-end) 100%);
     border: 1px solid var(--line-soft);
     border-radius: 16px;
     min-height: 102px;
@@ -628,17 +634,9 @@ body {
 }
 
 .workflow-card p {
-    color: var(--text-dim);
+    color: var(--workflow-card-text);
     font-size: 0.76rem;
     line-height: 1.5;
-}
-
-body[data-theme="day"] .workflow-card {
-    background: linear-gradient(180deg, #6c5540 0%, #55412f 100%);
-}
-
-body[data-theme="day"] .workflow-card p {
-    color: #e8d7c1;
 }
 
 .action-buttons,
