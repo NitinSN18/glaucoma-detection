@@ -633,6 +633,14 @@ body {
     line-height: 1.5;
 }
 
+body[data-theme="day"] .workflow-card {
+    background: linear-gradient(180deg, #6c5540 0%, #55412f 100%);
+}
+
+body[data-theme="day"] .workflow-card p {
+    color: #e8d7c1;
+}
+
 .action-buttons,
 .batch-actions,
 .batch-action-buttons {
