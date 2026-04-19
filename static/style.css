@@ -1423,6 +1423,59 @@ body {
     align-content: start;
 }
 
+.analysis-stepper {
+    margin-top: 6px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.step-pill {
+    border: 1px solid #2f4670;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    color: #a9bfdc;
+    background: rgba(7, 18, 35, 0.5);
+}
+
+.step-pill.active {
+    color: #eaf7ff;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(91, 216, 232, 0.15);
+}
+
+.analysis-step {
+    display: none;
+}
+
+.analysis-step.active {
+    display: block;
+}
+
+.analysis-step-nav {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.analysis-step-nav.split {
+    grid-template-columns: 1fr 1fr;
+}
+
+.next-arrow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.next-arrow-btn .arrow {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
 .patient-card {
     margin-top: 10px;
     background: rgba(9, 22, 42, 0.48);
@@ -1477,8 +1530,84 @@ body {
     color: #ffffff;
 }
 
+.patient-card.compact {
+    padding: 8px;
+}
+
+.compact-mode {
+    margin-top: 8px;
+    padding: 8px;
+}
+
 .span-all {
     grid-column: 1 / -1;
+}
+
+.workflow-ppt {
+    margin-top: 14px;
+    background: rgba(9, 21, 40, 0.58);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.ppt-header-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+}
+
+.ppt-index {
+    font-size: 0.76rem;
+    color: #9fc2e6;
+}
+
+.ppt-summary {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: #b6cbe6;
+    line-height: 1.45;
+}
+
+.ppt-metrics {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.ppt-metric-item {
+    border: 1px solid #2b456c;
+    border-radius: 8px;
+    background: rgba(10, 23, 45, 0.7);
+    padding: 8px;
+}
+
+.ppt-metric-item span {
+    display: block;
+    font-size: 0.68rem;
+    color: #9fc2e6;
+    margin-bottom: 4px;
+}
+
+.ppt-metric-item strong {
+    font-size: 0.8rem;
+    color: #eaf7ff;
+}
+
+.ppt-points {
+    margin: 10px 0 0 18px;
+    color: #c8dbf1;
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.ppt-controls {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
 }
 
 #patient-summary-box p {
@@ -1583,7 +1712,10 @@ body {
     .results-layout,
     .patient-form-grid,
     .logbook-grid,
-    .inline-metrics-grid {
+    .inline-metrics-grid,
+    .analysis-step-nav.split,
+    .ppt-metrics,
+    .ppt-controls {
         grid-template-columns: 1fr;
     }
 

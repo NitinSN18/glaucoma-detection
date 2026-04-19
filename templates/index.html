@@ -68,31 +68,37 @@
         <div id="single-analysis" class="tab-content active">
             <div class="content-grid analysis-grid">
                 <div class="card">
-                    <div class="patient-card">
+                    <div class="analysis-stepper">
+                        <span class="step-pill active" id="pill-step-patient">1. Patient Details (Optional)</span>
+                        <span class="step-pill" id="pill-step-upload">2. Upload & Analyze</span>
+                    </div>
+
+                    <div class="analysis-step active" id="analysis-step-patient">
+                        <div class="patient-card compact">
                         <div class="section-title-row">
-                            <h3>Patient Details</h3>
+                            <h3>Patient Details (Optional)</h3>
                             <button class="btn-secondary btn-compact" id="save-patient-btn" type="button">Save to Logbook</button>
                         </div>
                         <div class="patient-form-grid">
                             <div class="form-field">
-                                <label for="patient-first-name">First Name *</label>
-                                <input id="patient-first-name" type="text" placeholder="Enter first name" required>
+                                <label for="patient-first-name">First Name</label>
+                                <input id="patient-first-name" type="text" placeholder="Enter first name">
                             </div>
                             <div class="form-field">
-                                <label for="patient-last-name">Last Name *</label>
-                                <input id="patient-last-name" type="text" placeholder="Enter last name" required>
+                                <label for="patient-last-name">Last Name</label>
+                                <input id="patient-last-name" type="text" placeholder="Enter last name">
                             </div>
                             <div class="form-field">
                                 <label for="patient-id">Patient ID</label>
                                 <input id="patient-id" type="text" placeholder="Hospital patient ID">
                             </div>
                             <div class="form-field">
-                                <label for="patient-age">Age *</label>
-                                <input id="patient-age" type="number" min="1" max="120" placeholder="Age" required>
+                                <label for="patient-age">Age</label>
+                                <input id="patient-age" type="number" min="1" max="120" placeholder="Age">
                             </div>
                             <div class="form-field">
-                                <label for="patient-gender">Gender *</label>
-                                <select id="patient-gender" required>
+                                <label for="patient-gender">Gender</label>
+                                <select id="patient-gender">
                                     <option value="">Select</option>
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
@@ -179,43 +185,55 @@
                                 </label>
                             </div>
                         </div>
+
+                        <div class="analysis-step-nav">
+                            <button class="btn-primary next-arrow-btn" id="to-upload-step-btn" type="button" aria-label="Next: Upload Retinal Image">
+                                <span>Next: Upload Retinal Image</span>
+                                <span class="arrow">→</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <h2>Upload Retinal Image</h2>
-                    <div class="upload-area" id="single-upload-area">
-                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <p>Drag and drop your retinal image here</p>
-                        <p class="upload-hint">or click to select</p>
-                        <input type="file" id="single-image-input" accept="image/png,image/jpeg,image/jpg,image/bmp" hidden>
-                    </div>
+                    <div class="analysis-step" id="analysis-step-upload">
+                        <h2>Upload Retinal Image</h2>
+                        <div class="upload-area" id="single-upload-area">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Drag and drop your retinal image here</p>
+                            <p class="upload-hint">or click to select</p>
+                            <input type="file" id="single-image-input" accept="image/png,image/jpeg,image/jpg,image/bmp" hidden>
+                        </div>
 
-                    <div id="single-preview" class="image-preview hidden">
-                        <img id="single-preview-img" alt="Preview">
-                        <button class="btn-secondary btn-compact" onclick="resetSingleImage()">Remove</button>
-                    </div>
+                        <div id="single-preview" class="image-preview hidden">
+                            <img id="single-preview-img" alt="Preview">
+                            <button class="btn-secondary btn-compact" onclick="resetSingleImage()">Remove</button>
+                        </div>
 
-                    <div class="analysis-mode">
-                        <label>
-                            <input type="radio" name="analysis-mode" value="combined" checked>
-                            <strong>Combined</strong>: Classification + Segmentation
-                        </label>
-                        <label>
-                            <input type="radio" name="analysis-mode" value="classify-only">
-                            <strong>Classification Only</strong>: Glaucoma Detection
-                        </label>
-                        <label>
-                            <input type="radio" name="analysis-mode" value="segment-only">
-                            <strong>Segmentation Only</strong>: Optic Disc and Cup
-                        </label>
-                    </div>
+                        <div class="analysis-mode compact-mode">
+                            <label>
+                                <input type="radio" name="analysis-mode" value="combined" checked>
+                                <strong>Combined</strong>: Classification + Segmentation
+                            </label>
+                            <label>
+                                <input type="radio" name="analysis-mode" value="classify-only">
+                                <strong>Classification Only</strong>: Glaucoma Detection
+                            </label>
+                            <label>
+                                <input type="radio" name="analysis-mode" value="segment-only">
+                                <strong>Segmentation Only</strong>: Optic Disc and Cup
+                            </label>
+                        </div>
 
-                    <button class="btn-primary" id="analyze-btn" onclick="analyzeSingleImage()">
-                        <span>Analyze Image</span>
-                    </button>
+                        <div class="analysis-step-nav split">
+                            <button class="btn-secondary" id="to-patient-step-btn" type="button">← Back to Patient Details</button>
+                            <button class="btn-primary" id="analyze-btn" onclick="analyzeSingleImage()">
+                                <span>Analyze Image</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card results-card" id="results-card" style="display: none;">
@@ -430,9 +448,18 @@
                         </button>
                     </div>
 
-                    <div class="flow-detail" id="flow-detail-box">
-                        <h3 id="flow-detail-title">Input</h3>
-                        <p id="flow-detail-description">Upload a high quality retinal image to begin analysis.</p>
+                    <div class="workflow-ppt" id="workflow-ppt">
+                        <div class="ppt-header-row">
+                            <h3 id="workplace-slide-title">Input Quality Gate</h3>
+                            <span id="workplace-slide-index" class="ppt-index">1 / 5</span>
+                        </div>
+                        <p id="workplace-slide-summary" class="ppt-summary"></p>
+                        <div id="workplace-slide-metrics" class="ppt-metrics"></div>
+                        <ul id="workplace-slide-points" class="ppt-points"></ul>
+                        <div class="ppt-controls">
+                            <button class="btn-secondary btn-compact" id="workplace-prev-btn" type="button">← Previous</button>
+                            <button class="btn-secondary btn-compact" id="workplace-next-btn" type="button">Next →</button>
+                        </div>
                     </div>
                 </div>
 

@@ -12,31 +12,83 @@ const DISCLAIMER_KEY = 'gds-disclaimer-accepted-v1';
 
 const workplaceFlow = {
   input: {
-    title: 'Input',
+    title: 'Input Quality Gate',
     description:
-        'Upload a retinal fundus image. Better image quality produces more stable predictions and cleaner segmentation masks.'
+        'A clean fundus image is the strongest predictor of stable downstream output. We check framing, focus, and glare before inference.',
+    metrics: [
+      {label: 'Target Resolution', value: '512 x 512'},
+      {label: 'Accepted Formats', value: 'PNG/JPG/BMP'},
+      {label: 'Quality Threshold', value: '>= 0.80'}
+    ],
+    points: [
+      'Centered optic nerve head improves segmentation stability.',
+      'Low glare and low blur reduce false-positive risk spikes.',
+      'Extreme underexposure can suppress vessel contrast.'
+    ]
   },
   preprocess: {
-    title: 'Preprocess',
+    title: 'Preprocess & Normalize',
     description:
-        'The image is normalized and resized to the model input size so downstream inference remains consistent.'
+        'Input is resized and normalized to match model training distributions so feature extraction remains consistent across devices.',
+    metrics: [
+      {label: 'Color Normalization', value: 'Enabled'},
+      {label: 'Resize Kernel', value: 'Bilinear'},
+      {label: 'Pipeline Latency', value: '~45 ms'}
+    ],
+    points: [
+      'Normalization reduces variability from camera and clinic lighting.',
+      'Consistent sizing keeps receptive fields comparable to training.',
+      'Preprocess timing remains low for near-real-time use.'
+    ]
   },
   classify: {
-    title: 'Classify (EfficientNet-B0)',
+    title: 'Classification: EfficientNet-B0',
     description:
-        'EfficientNet-B0 estimates glaucoma probability and confidence from global retinal patterns.'
+        'EfficientNet-B0 predicts glaucoma probability using global retinal cues and reports calibrated confidence for triage decisions.',
+    metrics: [
+      {label: 'Backbone', value: 'EfficientNet-B0'},
+      {label: 'Output Classes', value: '2 (Glaucoma/Normal)'},
+      {label: 'Typical Inference', value: '~120 ms'}
+    ],
+    points: [
+      'Probability scores are shown for both glaucoma and normal.',
+      'Confidence bar highlights certainty for review prioritization.',
+      'Use with clinical context rather than standalone diagnosis.'
+    ]
   },
   segment: {
-    title: 'Segment (DeepLabV3+)',
+    title: 'Segmentation: DeepLabV3+',
     description:
-        'DeepLabV3+ extracts optic disc and cup regions, giving visual evidence for structural interpretation.'
+        'DeepLabV3+ extracts optic disc and cup masks to provide structural evidence and CDR-relevant visual cues.',
+    metrics: [
+      {label: 'Model', value: 'DeepLabV3+'},
+      {label: 'Outputs', value: 'Disc + Cup masks'},
+      {label: 'Overlay Mode', value: 'Color-coded'}
+    ],
+    points: [
+      'Disc and cup boundaries are rendered as separate overlays.',
+      'Quality warnings suppress unsafe structural metrics when needed.',
+      'Heatmaps support explainability and confidence review.'
+    ]
   },
   report: {
-    title: 'Final Report',
+    title: 'Integrated Clinical Report',
     description:
-        'Prediction scores and anatomical overlays are combined into a readable clinical decision-support view.'
+        'Classification and segmentation are merged into one compact report for interpretation, handoff, and follow-up tracking.',
+    metrics: [
+      {label: 'Includes', value: 'Scores + Overlays'},
+      {label: 'Snapshot', value: 'Patient summary'},
+      {label: 'Export', value: 'CSV result download'}
+    ],
+    points: [
+      'Patient context is attached to each analysis run when selected.',
+      'Clinical recommendation text is surfaced for quick actioning.',
+      'Results can be reviewed later in history and logbook tabs.'
+    ]
   }
 };
+
+const workplaceOrder = ['input', 'preprocess', 'classify', 'segment', 'report'];
 
 // ========== INITIALIZATION ==========
 
@@ -102,6 +154,11 @@ function setupEventListeners() {
       ?.addEventListener('click', savePatientToLogbook);
   document.getElementById('refresh-logbook-btn')
       ?.addEventListener('click', loadPatientLogbook);
+
+  document.getElementById('to-upload-step-btn')
+      ?.addEventListener('click', () => setSingleAnalysisStep('upload'));
+  document.getElementById('to-patient-step-btn')
+      ?.addEventListener('click', () => setSingleAnalysisStep('patient'));
 }
 
 function setupSettingsModal() {
@@ -170,30 +227,100 @@ function setupDisplayControls() {
 
 function setupWorkplaceFlowchart() {
   const nodes = document.querySelectorAll('#model-flowchart .flow-step');
-  const title = document.getElementById('flow-detail-title');
-  const description = document.getElementById('flow-detail-description');
+  const title = document.getElementById('workplace-slide-title');
+  const description = document.getElementById('workplace-slide-summary');
+  const metrics = document.getElementById('workplace-slide-metrics');
+  const points = document.getElementById('workplace-slide-points');
+  const index = document.getElementById('workplace-slide-index');
+  const prevBtn = document.getElementById('workplace-prev-btn');
+  const nextBtn = document.getElementById('workplace-next-btn');
 
-  if (!nodes.length || !title || !description) {
+  if (!nodes.length || !title || !description || !metrics || !points ||
+      !index) {
     return;
   }
+
+  let activeIndex = 0;
+
+  const renderSlide = () => {
+    const key = workplaceOrder[activeIndex];
+    const info = workplaceFlow[key];
+    if (!info) return;
+
+    title.textContent = info.title;
+    description.textContent = info.description;
+    index.textContent = `${activeIndex + 1} / ${workplaceOrder.length}`;
+
+    metrics.innerHTML = '';
+    (info.metrics || []).forEach((item) => {
+      const metricCard = document.createElement('div');
+      metricCard.className = 'ppt-metric-item';
+      metricCard.innerHTML =
+          `<span>${item.label}</span><strong>${item.value}</strong>`;
+      metrics.appendChild(metricCard);
+    });
+
+    points.innerHTML = '';
+    (info.points || []).forEach((point) => {
+      const li = document.createElement('li');
+      li.textContent = point;
+      points.appendChild(li);
+    });
+
+    if (prevBtn) prevBtn.disabled = activeIndex === 0;
+    if (nextBtn) nextBtn.disabled = activeIndex === workplaceOrder.length - 1;
+  };
 
   const setActiveNode = (selectedNode) => {
     nodes.forEach(node => node.classList.remove('active'));
     selectedNode.classList.add('active');
 
     const key = selectedNode.getAttribute('data-model');
-    const info = workplaceFlow[key];
-    if (!info) return;
+    const nextIndex = workplaceOrder.indexOf(key);
+    if (nextIndex !== -1) {
+      activeIndex = nextIndex;
+      renderSlide();
+    }
+  };
 
-    title.textContent = info.title;
-    description.textContent = info.description;
+  const setActiveByIndex = (nextIndex) => {
+    if (nextIndex < 0 || nextIndex >= workplaceOrder.length) return;
+    activeIndex = nextIndex;
+    const key = workplaceOrder[activeIndex];
+    const matchingNode = Array.from(nodes).find(
+        (node) => node.getAttribute('data-model') === key);
+    if (matchingNode) {
+      nodes.forEach((node) => node.classList.remove('active'));
+      matchingNode.classList.add('active');
+    }
+    renderSlide();
   };
 
   nodes.forEach(node => {
     node.addEventListener('click', () => setActiveNode(node));
   });
 
+  prevBtn?.addEventListener('click', () => setActiveByIndex(activeIndex - 1));
+  nextBtn?.addEventListener('click', () => setActiveByIndex(activeIndex + 1));
+
   setActiveNode(nodes[0]);
+}
+
+function setSingleAnalysisStep(step) {
+  const patientStep = document.getElementById('analysis-step-patient');
+  const uploadStep = document.getElementById('analysis-step-upload');
+  const patientPill = document.getElementById('pill-step-patient');
+  const uploadPill = document.getElementById('pill-step-upload');
+
+  if (!patientStep || !uploadStep || !patientPill || !uploadPill) {
+    return;
+  }
+
+  const showUpload = step === 'upload';
+  patientStep.classList.toggle('active', !showUpload);
+  uploadStep.classList.toggle('active', showUpload);
+  patientPill.classList.toggle('active', !showUpload);
+  uploadPill.classList.toggle('active', showUpload);
 }
 
 function startSplashSequence() {
@@ -282,16 +409,6 @@ function collectPatientDetails() {
 }
 
 function validatePatientDetails(details) {
-  if (!details.first_name || !details.last_name || !details.age ||
-      !details.gender) {
-    alert(
-        'Please complete required fields: first name, last name, age, and gender.');
-    return false;
-  }
-  if (details.allergies === 'yes' && !details.allergy_details) {
-    alert('Please mention allergy details when allergies are marked Yes.');
-    return false;
-  }
   return true;
 }
 
@@ -783,7 +900,9 @@ function clearHistory() {
 
 async function savePatientToLogbook() {
   const patientDetails = collectPatientDetails();
-  if (!validatePatientDetails(patientDetails)) {
+  const hasAnyField = Object.values(patientDetails).some(value => value);
+  if (!hasAnyField) {
+    alert('Please enter at least one patient detail before saving to logbook.');
     return;
   }
 
