@@ -90,6 +90,111 @@ const workplaceFlow = {
 
 const workplaceOrder = ['input', 'preprocess', 'classify', 'segment', 'report'];
 
+const projectPptSlides = [
+  {
+    title: 'Glaucoma Detection System',
+    subtitle: 'AI-assisted screening web platform',
+    theme: 'Project overview',
+    bullets: [
+      'Combines glaucoma classification and structural segmentation.',
+      'Designed for fast, explainable triage and follow-up support.',
+      'Delivered as a browser-based clinical workflow demo.'
+    ]
+  },
+  {
+    title: 'Problem Statement',
+    subtitle: 'Why this project matters',
+    theme: 'Clinical need',
+    bullets: [
+      'Glaucoma can progress silently before symptoms become obvious.',
+      'Manual screening depends on specialist time and access.',
+      'The project focuses on early, repeatable, decision support.'
+    ]
+  },
+  {
+    title: 'Dataset & Inputs',
+    subtitle: 'What the model sees',
+    theme: 'Data pipeline',
+    bullets: [
+      'Retinal fundus images are organized into train, validation, and test sets.',
+      'The app accepts PNG, JPG, JPEG, and BMP inputs.',
+      'Patient details can be attached optionally for audit and follow-up.'
+    ]
+  },
+  {
+    title: 'System Architecture',
+    subtitle: 'Frontend, backend, and model flow',
+    theme: 'Architecture',
+    bullets: [
+      'Flask serves the UI, auth, and inference APIs.',
+      'The workflow runs from input to preprocessing, classification, segmentation, and reporting.',
+      'History and patient logbook keep results organized.'
+    ]
+  },
+  {
+    title: 'Classification Model',
+    subtitle: 'Glaucoma risk prediction',
+    theme: 'EfficientNet-B0',
+    bullets: [
+      'Predicts glaucoma probability from global retinal patterns.',
+      'Outputs prediction label, confidence, and class probabilities.',
+      'Integrates directly into the results dashboard for quick review.'
+    ]
+  },
+  {
+    title: 'Segmentation Model',
+    subtitle: 'Optic disc and cup analysis',
+    theme: 'DeepLabV3+',
+    bullets: [
+      'Produces optic disc and cup masks for structural interpretation.',
+      'Overlay and heatmaps help explain the result visually.',
+      'Quality logic suppresses unstable measurements when needed.'
+    ]
+  },
+  {
+    title: 'Clinical Explainability',
+    subtitle: 'Why the result is trustworthy',
+    theme: 'Interpretability',
+    bullets: [
+      'Cup-to-disc related cues are surfaced in the report.',
+      'Confidence, recommendation, and overlays appear together.',
+      'The Workplace Flow is presented as a guided PPT-style narrative.'
+    ]
+  },
+  {
+    title: 'Web Features Implemented',
+    subtitle: 'Application capabilities',
+    theme: 'Product features',
+    bullets: [
+      'Permanent login uses host / 123.',
+      'Single image analysis uses a two-step workflow with optional patient details.',
+      'Patient logbook persists JSONL records for later review.'
+    ]
+  },
+  {
+    title: 'Operations & UX',
+    subtitle: 'Usability and runtime behavior',
+    theme: 'User experience',
+    bullets: [
+      'Batch processing handles multiple images in one request.',
+      'Theme controls and health status help with live usage.',
+      'Downloadable analysis summaries support simple sharing.'
+    ]
+  },
+  {
+    title: 'Roadmap',
+    subtitle: 'Next steps for the project',
+    theme: 'Future work',
+    bullets: [
+      'Add PDF reporting and richer export options.',
+      'Expand calibration and validation across more datasets.',
+      'Add clinician review features and versioned model tracking.'
+    ]
+  }
+];
+
+let projectPptActiveIndex = 0;
+
 // ========== INITIALIZATION ==========
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -231,6 +336,8 @@ function setupProjectPptModal() {
   const modal = document.getElementById('project-ppt-modal');
   const closeBtn = document.getElementById('project-ppt-close');
   const footerCloseBtn = document.getElementById('project-ppt-close-btn');
+  const prevBtn = document.getElementById('project-ppt-prev');
+  const nextBtn = document.getElementById('project-ppt-next');
 
   if (!openBtn || !modal) {
     return;
@@ -240,12 +347,82 @@ function setupProjectPptModal() {
     modal.style.display = 'none';
   };
 
-  openBtn.addEventListener('click', () => {
+  const renderSlide = () => {
+    const slide = projectPptSlides[projectPptActiveIndex];
+    if (!slide) {
+      return;
+    }
+
+    const numberEl = document.getElementById('project-ppt-slide-number');
+    const titleEl = document.getElementById('project-ppt-slide-title');
+    const subtitleEl = document.getElementById('project-ppt-slide-subtitle');
+    const bulletsEl = document.getElementById('project-ppt-slide-bullets');
+    const captionEl = document.getElementById('project-ppt-slide-caption');
+    const themeEl = document.getElementById('project-ppt-slide-theme');
+    const thumbnailsEl = document.getElementById('project-ppt-thumbnails');
+
+    if (numberEl)
+      numberEl.textContent = String(projectPptActiveIndex + 1).padStart(2, '0');
+    if (titleEl) titleEl.textContent = slide.title;
+    if (subtitleEl) subtitleEl.textContent = slide.subtitle;
+    if (captionEl)
+      captionEl.textContent =
+          `Slide ${projectPptActiveIndex + 1} of ${projectPptSlides.length}`;
+    if (themeEl) themeEl.textContent = slide.theme;
+
+    if (bulletsEl) {
+      bulletsEl.innerHTML = '';
+      slide.bullets.forEach((bullet) => {
+        const li = document.createElement('li');
+        li.textContent = bullet;
+        bulletsEl.appendChild(li);
+      });
+    }
+
+    if (thumbnailsEl) {
+      thumbnailsEl.innerHTML = '';
+      projectPptSlides.forEach((thumbSlide, index) => {
+        const thumb = document.createElement('button');
+        thumb.type = 'button';
+        thumb.className =
+            `ppt-thumbnail ${index === projectPptActiveIndex ? 'active' : ''}`;
+        thumb.innerHTML =
+            `<span>${String(index + 1).padStart(2, '0')}</span><strong>${
+                thumbSlide.title}</strong>`;
+        thumb.addEventListener('click', () => {
+          projectPptActiveIndex = index;
+          renderSlide();
+        });
+        thumbnailsEl.appendChild(thumb);
+      });
+    }
+
+    if (prevBtn) prevBtn.disabled = projectPptActiveIndex === 0;
+    if (nextBtn)
+      nextBtn.disabled = projectPptActiveIndex === projectPptSlides.length - 1;
+  };
+
+  const openModal = () => {
+    projectPptActiveIndex = 0;
     modal.style.display = 'flex';
-  });
+    renderSlide();
+  };
+
+  const stepSlide = (delta) => {
+    const nextIndex = projectPptActiveIndex + delta;
+    if (nextIndex < 0 || nextIndex >= projectPptSlides.length) {
+      return;
+    }
+    projectPptActiveIndex = nextIndex;
+    renderSlide();
+  };
+
+  openBtn.addEventListener('click', openModal);
 
   closeBtn?.addEventListener('click', closeModal);
   footerCloseBtn?.addEventListener('click', closeModal);
+  prevBtn?.addEventListener('click', () => stepSlide(-1));
+  nextBtn?.addEventListener('click', () => stepSlide(1));
 }
 
 function setupWorkplaceFlowchart() {

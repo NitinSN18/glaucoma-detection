@@ -578,17 +578,28 @@
             <span class="modal-close" id="project-ppt-close">&times;</span>
             <h2>Project PPT (10 Slides)</h2>
             <p class="education-intro">Generated overview deck for the complete glaucoma detection project workflow and implementation.</p>
-            <div class="project-ppt-list">
-                <p>1. Glaucoma Detection System</p>
-                <p>2. Problem Statement</p>
-                <p>3. Dataset & Inputs</p>
-                <p>4. System Architecture</p>
-                <p>5. Classification Model</p>
-                <p>6. Segmentation Model</p>
-                <p>7. Clinical Explainability</p>
-                <p>8. Web Features Implemented</p>
-                <p>9. Operations & UX</p>
-                <p>10. Roadmap</p>
+            <div class="ppt-viewer">
+                <div class="ppt-slide-shell" id="project-ppt-slide-shell">
+                    <div class="ppt-slide-header">
+                        <span class="ppt-slide-badge" id="project-ppt-slide-number">01</span>
+                        <div class="ppt-slide-header-text">
+                            <h3 id="project-ppt-slide-title">Glaucoma Detection System</h3>
+                            <p id="project-ppt-slide-subtitle">AI-assisted screening web platform</p>
+                        </div>
+                    </div>
+                    <div class="ppt-slide-body">
+                        <ul id="project-ppt-slide-bullets"></ul>
+                    </div>
+                    <div class="ppt-slide-footer">
+                        <span id="project-ppt-slide-caption">Slide 1 of 10</span>
+                        <span id="project-ppt-slide-theme">Project overview</span>
+                    </div>
+                </div>
+                <div class="ppt-viewer-controls">
+                    <button class="btn-secondary btn-compact" id="project-ppt-prev" type="button">← Previous</button>
+                    <button class="btn-secondary btn-compact" id="project-ppt-next" type="button">Next →</button>
+                </div>
+                <div class="ppt-thumbnails" id="project-ppt-thumbnails"></div>
             </div>
             <div class="project-ppt-actions">
                 <a class="btn-primary" href="/downloads/Glaucoma_Detection_Project_10_Slides.pptx">Download PPT</a>
