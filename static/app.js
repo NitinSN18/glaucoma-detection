@@ -4,11 +4,8 @@ const globalState = {
   results: [],
   batchFiles: [],
   currentAnalysis: null,
-  currentFile: null,
-  currentPatientDetails: null
+  currentFile: null
 };
-
-const DISCLAIMER_KEY = 'gds-disclaimer-accepted-v1';
 
 const workplaceFlow = {
   input: {
@@ -44,8 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   setupDisplayControls();
   setupWorkplaceFlowchart();
-  setupSettingsModal();
-  setupDisclaimerPopup();
   startSplashSequence();
   checkServerHealth();
 });
@@ -96,59 +91,6 @@ function setupEventListeners() {
 
   document.querySelectorAll('input[name="analysis-mode"]').forEach(input => {
     input.addEventListener('change', updateCurrentWorkflowCard);
-  });
-
-  document.getElementById('save-patient-btn')
-      ?.addEventListener('click', savePatientToLogbook);
-  document.getElementById('refresh-logbook-btn')
-      ?.addEventListener('click', loadPatientLogbook);
-}
-
-function setupSettingsModal() {
-  const settingsBtn = document.getElementById('settings-btn');
-  const settingsModal = document.getElementById('settings-modal');
-  const settingsClose = document.getElementById('settings-close');
-  const logoutBtn = document.getElementById('logout-btn');
-
-  if (settingsBtn && settingsModal) {
-    settingsBtn.addEventListener('click', () => {
-      settingsModal.style.display = 'flex';
-    });
-  }
-
-  if (settingsClose && settingsModal) {
-    settingsClose.addEventListener('click', () => {
-      settingsModal.style.display = 'none';
-    });
-  }
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      try {
-        await fetch('/api/logout', {method: 'POST'});
-      } catch (_) {
-        // Ignore network errors and still redirect.
-      }
-      window.location.href = '/login';
-    });
-  }
-}
-
-function setupDisclaimerPopup() {
-  const modal = document.getElementById('disclaimer-modal');
-  const closeBtn = document.getElementById('disclaimer-close-btn');
-  if (!modal || !closeBtn) {
-    return;
-  }
-
-  const alreadyAccepted = window.localStorage.getItem(DISCLAIMER_KEY) === '1';
-  if (!alreadyAccepted) {
-    modal.style.display = 'flex';
-  }
-
-  closeBtn.addEventListener('click', () => {
-    window.localStorage.setItem(DISCLAIMER_KEY, '1');
-    modal.style.display = 'none';
   });
 }
 
@@ -226,9 +168,6 @@ function switchTab(e) {
   if (tabName === 'history') {
     displayHistory();
   }
-  if (tabName === 'logbook') {
-    loadPatientLogbook();
-  }
 }
 
 function updateCurrentWorkflowCard() {
@@ -250,86 +189,6 @@ function updateCurrentWorkflowCard() {
   };
 
   workflowCard.textContent = messages[selectedMode] || messages.combined;
-}
-
-function collectPatientDetails() {
-  const getValue = (id) => {
-    const element = document.getElementById(id);
-    return element ? element.value.trim() : '';
-  };
-
-  const details = {
-    first_name: getValue('patient-first-name'),
-    last_name: getValue('patient-last-name'),
-    patient_id: getValue('patient-id'),
-    age: getValue('patient-age'),
-    gender: getValue('patient-gender'),
-    email: getValue('patient-email'),
-    phone: getValue('patient-phone'),
-    eye_examined: getValue('patient-eye'),
-    diabetes: getValue('patient-diabetes'),
-    hypertension: getValue('patient-hypertension'),
-    family_history_glaucoma: getValue('patient-family-history'),
-    allergies: getValue('patient-allergies'),
-    allergy_details: getValue('patient-allergy-details'),
-    medications: getValue('patient-medications'),
-    eye_surgery_history: getValue('patient-eye-surgery'),
-    chief_complaint: getValue('patient-chief-complaint'),
-    clinical_notes: getValue('patient-notes')
-  };
-
-  return details;
-}
-
-function validatePatientDetails(details) {
-  if (!details.first_name || !details.last_name || !details.age ||
-      !details.gender) {
-    alert(
-        'Please complete required fields: first name, last name, age, and gender.');
-    return false;
-  }
-  if (details.allergies === 'yes' && !details.allergy_details) {
-    alert('Please mention allergy details when allergies are marked Yes.');
-    return false;
-  }
-  return true;
-}
-
-function renderPatientSummary(details) {
-  const summaryEl = document.getElementById('patient-summary-text');
-  if (!summaryEl) {
-    return;
-  }
-
-  if (!details) {
-    summaryEl.textContent = 'Patient details will appear here after analysis.';
-    return;
-  }
-
-  const title =
-      [details.first_name, details.last_name].filter(Boolean).join(' ');
-  const patientId =
-      details.patient_id ? `ID: ${details.patient_id}` : 'ID: N/A';
-  const demographics = [
-    details.age ? `${details.age}y` : '', details.gender
-  ].filter(Boolean).join(' | ');
-  const risks = [
-    details.diabetes === 'yes' ? 'Diabetes' : '',
-    details.hypertension === 'yes' ? 'Hypertension' : '',
-    details.family_history_glaucoma === 'yes' ? 'Family Hx Glaucoma' : ''
-  ].filter(Boolean).join(', ');
-  const riskLine = risks || 'No major risk flags captured';
-  summaryEl.textContent =
-      `${title} | ${patientId} | ${demographics} | ${riskLine}`;
-}
-
-async function fetchWithAuth(url, options) {
-  const response = await fetch(url, options);
-  if (response.status === 401) {
-    window.location.href = '/login';
-    throw new Error('Session expired. Please log in again.');
-  }
-  return response;
 }
 
 // ========== DRAG AND DROP ==========
@@ -385,8 +244,6 @@ function resetSingleImage() {
   document.getElementById('single-preview').classList.add('hidden');
   document.getElementById('results-card').style.display = 'none';
   globalState.currentFile = null;
-  globalState.currentPatientDetails = null;
-  renderPatientSummary(null);
 }
 
 async function analyzeSingleImage() {
@@ -398,30 +255,18 @@ async function analyzeSingleImage() {
   const mode =
       document.querySelector('input[name="analysis-mode"]:checked').value;
 
-  const patientDetails = collectPatientDetails();
-  if (!validatePatientDetails(patientDetails)) {
-    return;
-  }
-  globalState.currentPatientDetails = patientDetails;
-
   document.getElementById('single-loading').classList.remove('hidden');
   document.getElementById('analyze-btn').disabled = true;
 
   try {
     const formData = new FormData();
     formData.append('image', globalState.currentFile);
-    formData.append('patient_details', JSON.stringify(patientDetails));
-    formData.append(
-        'save_to_logbook',
-        document.getElementById('save-logbook-checkbox')?.checked ? 'true' :
-                                                                    'false');
 
     let endpoint = '/api/combined';
     if (mode === 'classify-only') endpoint = '/api/classify';
     if (mode === 'segment-only') endpoint = '/api/segment';
 
-    const response =
-        await fetchWithAuth(endpoint, {method: 'POST', body: formData});
+    const response = await fetch(endpoint, {method: 'POST', body: formData});
 
     const result = await response.json();
 
@@ -435,8 +280,7 @@ async function analyzeSingleImage() {
       ...result,
       filename: globalState.currentFile.name,
       mode: mode,
-      timestamp: new Date(result.timestamp),
-      patient_details: patientDetails
+      timestamp: new Date(result.timestamp)
     });
 
     displaySingleResults(result, mode);
@@ -477,24 +321,6 @@ function displaySingleResults(result, mode) {
         (result.probabilities.glaucoma * 100).toFixed(1) + '%';
     document.getElementById('prob-normal').textContent =
         (result.probabilities.normal * 100).toFixed(1) + '%';
-
-    const metrics = result.clinical_metrics || {};
-    const valid = metrics.is_valid !== false;
-    document.getElementById('inline-sensitivity').textContent =
-        valid && metrics.sensitivity != null ? `${metrics.sensitivity}%` :
-                                               'N/A';
-    document.getElementById('inline-specificity').textContent =
-        valid && metrics.specificity != null ? `${metrics.specificity}%` :
-                                               'N/A';
-    document.getElementById('inline-cdr').textContent =
-        valid && typeof metrics.cup_to_disc_ratio === 'number' ?
-        metrics.cup_to_disc_ratio.toFixed(3) :
-        'N/A';
-    document.getElementById('inline-severity').textContent =
-        metrics.severity || 'N/A';
-    document.getElementById('inline-recommendation-text').textContent =
-        metrics.recommendation ||
-        'Clinical recommendation appears for combined analysis.';
   } else {
     document.getElementById('classification-results').style.display = 'none';
   }
@@ -544,8 +370,6 @@ function displaySingleResults(result, mode) {
     document.getElementById('segmentation-results').style.display = 'none';
   }
 
-  renderPatientSummary(
-      result.patient_details || globalState.currentPatientDetails);
   updateCurrentWorkflowCard();
 
   // Scroll to results
@@ -648,7 +472,7 @@ async function processBatch() {
     });
 
     const response =
-        await fetchWithAuth('/api/batch', {method: 'POST', body: formData});
+        await fetch('/api/batch', {method: 'POST', body: formData});
 
     const result = await response.json();
 
@@ -781,96 +605,11 @@ function clearHistory() {
   }
 }
 
-async function savePatientToLogbook() {
-  const patientDetails = collectPatientDetails();
-  if (!validatePatientDetails(patientDetails)) {
-    return;
-  }
-
-  try {
-    const response = await fetchWithAuth('/api/patient-records', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({patient_details: patientDetails})
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'Unable to save patient details');
-    }
-    alert('Patient details saved to logbook.');
-    loadPatientLogbook();
-  } catch (error) {
-    alert('Error saving patient details: ' + error.message);
-  }
-}
-
-async function loadPatientLogbook() {
-  const container = document.getElementById('logbook-container');
-  if (!container) {
-    return;
-  }
-
-  container.innerHTML = '<p style="color: #9bb3d4;">Loading records...</p>';
-  try {
-    const response = await fetchWithAuth('/api/patient-records');
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'Unable to load logbook');
-    }
-
-    const records =
-        Array.isArray(data.records) ? [...data.records].reverse() : [];
-    if (!records.length) {
-      container.innerHTML =
-          '<p style="color: #9bb3d4;">No patient records yet.</p>';
-      return;
-    }
-
-    container.innerHTML = '';
-    records.forEach((record) => {
-      const details = record.patient_details || {};
-      const card = document.createElement('div');
-      card.className = 'logbook-item';
-      const timestamp = record.timestamp ?
-          new Date(record.timestamp).toLocaleString() :
-          'Unknown time';
-      const fullName =
-          [details.first_name, details.last_name].filter(Boolean).join(' ') ||
-          'Unnamed patient';
-      const allergies = details.allergies === 'yes' ?
-          (details.allergy_details || 'Yes') :
-          (details.allergies || 'Unknown');
-      const diagnosis =
-          record.prediction ? record.prediction.toUpperCase() : 'N/A';
-
-      card.innerHTML = `
-        <div class="logbook-header">
-          <h4>${fullName}</h4>
-          <span>${timestamp}</span>
-        </div>
-        <div class="logbook-grid">
-          <p><strong>Patient ID:</strong> ${details.patient_id || 'N/A'}</p>
-          <p><strong>Age/Gender:</strong> ${details.age || 'N/A'} / ${
-          details.gender || 'N/A'}</p>
-          <p><strong>Eye:</strong> ${details.eye_examined || 'N/A'}</p>
-          <p><strong>Allergies:</strong> ${allergies}</p>
-          <p><strong>Diagnosis:</strong> ${diagnosis}</p>
-          <p><strong>Mode:</strong> ${
-          record.mode || record.record_type || 'patient-only'}</p>
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  } catch (error) {
-    container.innerHTML = `<p style="color:#ff8f8f;">${error.message}</p>`;
-  }
-}
-
 // ========== SERVER HEALTH CHECK ==========
 
 async function checkServerHealth() {
   try {
-    const response = await fetchWithAuth('/api/health');
+    const response = await fetch('/api/health');
     const data = await response.json();
 
     const indicator = document.getElementById('status-indicator');
@@ -884,10 +623,8 @@ async function checkServerHealth() {
     }
   } catch (error) {
     console.error('Health check failed:', error);
-    const statusText = document.getElementById('status-text');
-    if (statusText) {
-      statusText.textContent = 'Error: Cannot connect to server';
-    }
+    document.getElementById('status-text').textContent =
+        'Error: Cannot connect to server';
   }
 }
 
@@ -960,11 +697,7 @@ function closeDiagnosticModal() {
 // Close modal when clicking outside of it
 window.addEventListener('click', (event) => {
   const modal = document.getElementById('diagnostic-modal');
-  const settingsModal = document.getElementById('settings-modal');
   if (event.target === modal) {
     closeDiagnosticModal();
-  }
-  if (event.target === settingsModal) {
-    settingsModal.style.display = 'none';
   }
 });

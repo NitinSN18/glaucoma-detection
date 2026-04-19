@@ -4,13 +4,12 @@ import io
 import base64
 from pathlib import Path
 from datetime import datetime
-from functools import wraps
 
 import torch
 import numpy as np
 from PIL import Image
 import cv2
-from flask import Flask, render_template, request, jsonify, send_from_directory, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 import torchvision.transforms as transforms
 
@@ -21,13 +20,7 @@ warnings.filterwarnings('ignore')
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max
 app.config['UPLOAD_FOLDER'] = 'temp_uploads'
-app.config['SECRET_KEY'] = os.getenv('APP_SECRET_KEY', 'dev-secret-change-me')
-app.config['PATIENT_RECORDS_FILE'] = os.getenv('PATIENT_RECORDS_FILE', 'records/patient_records.jsonl')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(Path(app.config['PATIENT_RECORDS_FILE']).parent, exist_ok=True)
-
-AUTH_USERNAME = os.getenv('APP_USERNAME', 'admin')
-AUTH_PASSWORD = os.getenv('APP_PASSWORD', 'admin123')
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
@@ -442,48 +435,6 @@ def choose_component_near_point(bin_img, point_xy, min_area=25):
     if best is not None:
         cv2.drawContours(out, [best], -1, 255, -1)
     return out
-
-
-def _is_logged_in():
-    return bool(session.get('logged_in'))
-
-
-def login_required(api=False):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if _is_logged_in():
-                return func(*args, **kwargs)
-            if api:
-                return jsonify({'error': 'Authentication required'}), 401
-            return redirect(url_for('login_page'))
-        return wrapper
-    return decorator
-
-
-def _extract_patient_details():
-    raw = request.form.get('patient_details')
-    if not raw:
-        return {}
-    try:
-        parsed = json.loads(raw)
-        if isinstance(parsed, dict):
-            return parsed
-    except Exception:
-        pass
-    return {}
-
-
-def save_patient_record(record):
-    records_file = Path(app.config['PATIENT_RECORDS_FILE'])
-    records_file.parent.mkdir(parents=True, exist_ok=True)
-    with records_file.open('a', encoding='utf-8') as f:
-        f.write(json.dumps(record, ensure_ascii=True) + '\n')
-
-
-def should_save_logbook_from_form():
-    raw = str(request.form.get('save_to_logbook', 'true')).strip().lower()
-    return raw in ('1', 'true', 'yes', 'on')
 
 
 def _mask_centroid(bin_img):
@@ -933,42 +884,7 @@ def run_segmentation_pipeline(original_img_pil):
 # API ENDPOINTS
 # ============================================================================
 
-@app.route('/login')
-def login_page():
-    if _is_logged_in():
-        return redirect(url_for('index'))
-    return render_template('login.html')
-
-
-@app.route('/api/login', methods=['POST'])
-def api_login():
-    payload = request.get_json(silent=True) or {}
-    username = str(payload.get('username', '')).strip()
-    password = str(payload.get('password', ''))
-
-    if username == AUTH_USERNAME and password == AUTH_PASSWORD:
-        session['logged_in'] = True
-        session['username'] = username
-        return jsonify({'success': True, 'username': username}), 200
-
-    return jsonify({'error': 'Invalid username or password'}), 401
-
-
-@app.route('/api/logout', methods=['POST'])
-def api_logout():
-    session.clear()
-    return jsonify({'success': True}), 200
-
-
-@app.route('/api/auth-status', methods=['GET'])
-def api_auth_status():
-    return jsonify({
-        'authenticated': _is_logged_in(),
-        'username': session.get('username')
-    }), 200
-
 @app.route('/')
-@login_required(api=False)
 def index():
     """Serve the main HTML page"""
     return render_template('index.html')
@@ -981,7 +897,6 @@ def serve_static(filename):
 
 
 @app.route('/api/classify', methods=['POST'])
-@login_required(api=True)
 def api_classify():
     """
     Classification endpoint
@@ -1002,8 +917,6 @@ def api_classify():
         if classification_model is None:
             return jsonify({'error': 'Classification model not loaded'}), 500
         
-        patient_details = _extract_patient_details()
-
         # Save temporary file
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -1035,7 +948,7 @@ def api_classify():
             if os.path.exists(filepath):
                 os.remove(filepath)
         
-        response_data = {
+        return jsonify({
             'success': True,
             'prediction': prediction,
             'confidence': conf_score,
@@ -1043,23 +956,8 @@ def api_classify():
                 'glaucoma': glaucoma_prob,
                 'normal': normal_prob
             },
-            'timestamp': datetime.now().isoformat(),
-            'patient_details': patient_details
-        }
-
-        if should_save_logbook_from_form():
-            save_patient_record({
-                'timestamp': response_data['timestamp'],
-                'mode': 'classify-only',
-                'filename': file.filename,
-                'patient_details': patient_details,
-                'prediction': prediction,
-                'confidence': conf_score,
-                'probabilities': response_data['probabilities'],
-                'record_type': 'analysis'
-            })
-
-        return jsonify(response_data), 200
+            'timestamp': datetime.now().isoformat()
+        }), 200
     
     except Exception as e:
         print(f"Error in classify endpoint: {e}")
@@ -1067,7 +965,6 @@ def api_classify():
 
 
 @app.route('/api/segment', methods=['POST'])
-@login_required(api=True)
 def api_segment():
     """
     Segmentation endpoint
@@ -1088,8 +985,6 @@ def api_segment():
         if segmentation_model is None:
             return jsonify({'error': 'Segmentation model not loaded'}), 500
         
-        patient_details = _extract_patient_details()
-
         # Save temporary file
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -1111,7 +1006,7 @@ def api_segment():
             if os.path.exists(filepath):
                 os.remove(filepath)
         
-        response_data = {
+        return jsonify({
             'success': True,
             'disc_mask': disc_mask_b64,
             'cup_mask': cup_mask_b64,
@@ -1120,21 +1015,8 @@ def api_segment():
             'segmentation_quality': seg_output.get('segmentation_quality', {}),
             'original_image': original_b64,
             'overlay': overlay_b64,
-            'timestamp': datetime.now().isoformat(),
-            'patient_details': patient_details
-        }
-
-        if should_save_logbook_from_form():
-            save_patient_record({
-                'timestamp': response_data['timestamp'],
-                'mode': 'segment-only',
-                'filename': file.filename,
-                'patient_details': patient_details,
-                'segmentation_quality': response_data['segmentation_quality'],
-                'record_type': 'analysis'
-            })
-
-        return jsonify(response_data), 200
+            'timestamp': datetime.now().isoformat()
+        }), 200
     
     except Exception as e:
         print(f"Error in segment endpoint: {e}")
@@ -1144,7 +1026,6 @@ def api_segment():
 
 
 @app.route('/api/combined', methods=['POST'])
-@login_required(api=True)
 def api_combined():
     """
     Combined diagnosis endpoint (classification + segmentation)
@@ -1165,8 +1046,6 @@ def api_combined():
         if classification_model is None or segmentation_model is None:
             return jsonify({'error': 'One or more models not loaded'}), 500
         
-        patient_details = _extract_patient_details()
-
         # Save temporary file
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -1220,7 +1099,7 @@ def api_combined():
             if os.path.exists(filepath):
                 os.remove(filepath)
         
-        response_data = {
+        return jsonify({
             'success': True,
             'prediction': prediction,
             'confidence': conf_score,
@@ -1236,25 +1115,8 @@ def api_combined():
             'cup_heatmap': cup_heatmap_b64,
             'original_image': original_b64,
             'overlay': overlay_b64,
-            'timestamp': datetime.now().isoformat(),
-            'patient_details': patient_details
-        }
-
-        if should_save_logbook_from_form():
-            save_patient_record({
-                'timestamp': response_data['timestamp'],
-                'mode': 'combined',
-                'filename': file.filename,
-                'patient_details': patient_details,
-                'prediction': prediction,
-                'confidence': conf_score,
-                'probabilities': response_data['probabilities'],
-                'clinical_metrics': clinical_metrics,
-                'segmentation_quality': response_data['segmentation_quality'],
-                'record_type': 'analysis'
-            })
-
-        return jsonify(response_data), 200
+            'timestamp': datetime.now().isoformat()
+        }), 200
     
     except Exception as e:
         print(f"Error in combined endpoint: {e}")
@@ -1264,7 +1126,6 @@ def api_combined():
 
 
 @app.route('/api/batch', methods=['POST'])
-@login_required(api=True)
 def api_batch():
     """
     Batch processing endpoint
@@ -1363,7 +1224,6 @@ def api_batch():
 
 
 @app.route('/api/health', methods=['GET'])
-@login_required(api=True)
 def health_check():
     """Health check endpoint"""
     return jsonify({
@@ -1374,51 +1234,6 @@ def health_check():
             'segmentation': segmentation_model is not None
         }
     }), 200
-
-
-@app.route('/api/patient-records', methods=['GET'])
-@login_required(api=True)
-def api_patient_records():
-    records_file = Path(app.config['PATIENT_RECORDS_FILE'])
-    if not records_file.exists():
-        return jsonify({'success': True, 'records': []}), 200
-
-    records = []
-    try:
-        with records_file.open('r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    records.append(json.loads(line))
-                except Exception:
-                    continue
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-    return jsonify({'success': True, 'records': records[-200:]}), 200
-
-
-@app.route('/api/patient-records', methods=['POST'])
-@login_required(api=True)
-def api_save_patient_record():
-    payload = request.get_json(silent=True) or {}
-    patient_details = payload.get('patient_details')
-    if not isinstance(patient_details, dict):
-        return jsonify({'error': 'patient_details must be an object'}), 400
-
-    if not str(patient_details.get('first_name', '')).strip() or not str(patient_details.get('last_name', '')).strip():
-        return jsonify({'error': 'first_name and last_name are required'}), 400
-
-    record = {
-        'timestamp': datetime.now().isoformat(),
-        'record_type': 'patient-only',
-        'patient_details': patient_details,
-        'note': str(payload.get('note', '')).strip()
-    }
-    save_patient_record(record)
-    return jsonify({'success': True, 'record': record}), 201
 
 
 if __name__ == '__main__':

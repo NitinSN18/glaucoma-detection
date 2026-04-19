@@ -48,7 +48,6 @@ dataset/
 # Logs
 *.log
 logs/
-records/
 
 # Misc
 .pytest_cache/
