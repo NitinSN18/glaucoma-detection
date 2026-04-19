@@ -414,7 +414,13 @@
         <div id="workplace" class="tab-content">
             <div class="content-grid education-grid">
                 <div class="card education-card">
-                    <h2>Workplace Flow</h2>
+                    <div class="section-title-row">
+                        <h2>Workplace Flow</h2>
+                        <button class="btn-secondary btn-compact ppt-open-btn" id="open-project-ppt-btn" type="button" aria-label="Open project PPT">
+                            <span class="ppt-icon">PPT</span>
+                            <span>Project Deck</span>
+                        </button>
+                    </div>
                     <p class="education-intro">This pipeline combines image understanding and anatomical segmentation so each decision is both predictive and explainable.</p>
 
                     <div class="flowchart" id="model-flowchart">
@@ -564,6 +570,30 @@
                 It does not replace a qualified ophthalmologist's clinical diagnosis.
             </p>
             <button class="btn-primary" id="disclaimer-close-btn" type="button">I Understand</button>
+        </div>
+    </div>
+
+    <div id="project-ppt-modal" class="modal" style="display: none;">
+        <div class="modal-content project-ppt-modal-content">
+            <span class="modal-close" id="project-ppt-close">&times;</span>
+            <h2>Project PPT (10 Slides)</h2>
+            <p class="education-intro">Generated overview deck for the complete glaucoma detection project workflow and implementation.</p>
+            <div class="project-ppt-list">
+                <p>1. Glaucoma Detection System</p>
+                <p>2. Problem Statement</p>
+                <p>3. Dataset & Inputs</p>
+                <p>4. System Architecture</p>
+                <p>5. Classification Model</p>
+                <p>6. Segmentation Model</p>
+                <p>7. Clinical Explainability</p>
+                <p>8. Web Features Implemented</p>
+                <p>9. Operations & UX</p>
+                <p>10. Roadmap</p>
+            </div>
+            <div class="project-ppt-actions">
+                <a class="btn-primary" href="/downloads/Glaucoma_Detection_Project_10_Slides.pptx">Download PPT</a>
+                <button class="btn-secondary" id="project-ppt-close-btn" type="button">Close</button>
+            </div>
         </div>
     </div>
 

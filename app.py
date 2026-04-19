@@ -980,6 +980,13 @@ def serve_static(filename):
     return send_from_directory('static', filename)
 
 
+@app.route('/downloads/<path:filename>')
+@login_required(api=False)
+def serve_download(filename):
+    """Serve downloadable project artifacts like PPT files."""
+    return send_from_directory('downloads', filename, as_attachment=True)
+
+
 @app.route('/api/classify', methods=['POST'])
 @login_required(api=True)
 def api_classify():

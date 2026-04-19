@@ -96,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   setupDisplayControls();
   setupWorkplaceFlowchart();
+  setupProjectPptModal();
   setupSettingsModal();
   setupDisclaimerPopup();
   startSplashSequence();
@@ -223,6 +224,28 @@ function setupDisplayControls() {
   }
 
   updateCurrentWorkflowCard();
+}
+
+function setupProjectPptModal() {
+  const openBtn = document.getElementById('open-project-ppt-btn');
+  const modal = document.getElementById('project-ppt-modal');
+  const closeBtn = document.getElementById('project-ppt-close');
+  const footerCloseBtn = document.getElementById('project-ppt-close-btn');
+
+  if (!openBtn || !modal) {
+    return;
+  }
+
+  const closeModal = () => {
+    modal.style.display = 'none';
+  };
+
+  openBtn.addEventListener('click', () => {
+    modal.style.display = 'flex';
+  });
+
+  closeBtn?.addEventListener('click', closeModal);
+  footerCloseBtn?.addEventListener('click', closeModal);
 }
 
 function setupWorkplaceFlowchart() {
@@ -1081,10 +1104,14 @@ function closeDiagnosticModal() {
 window.addEventListener('click', (event) => {
   const modal = document.getElementById('diagnostic-modal');
   const settingsModal = document.getElementById('settings-modal');
+  const projectPptModal = document.getElementById('project-ppt-modal');
   if (event.target === modal) {
     closeDiagnosticModal();
   }
   if (event.target === settingsModal) {
     settingsModal.style.display = 'none';
+  }
+  if (event.target === projectPptModal) {
+    projectPptModal.style.display = 'none';
   }
 });
