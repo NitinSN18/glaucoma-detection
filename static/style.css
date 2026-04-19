@@ -1204,3 +1204,395 @@ body {
     border-color: var(--accent);
     box-shadow: 0 0 15px rgba(91, 216, 232, 0.2);
 }
+
+.section-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.section-title-row .btn-compact {
+    margin-top: 0;
+}
+
+.checkbox-field label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-field input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #5bd8e8;
+}
+
+.inline-metrics-grid {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.inline-metric-item {
+    background: rgba(12, 28, 52, 0.68);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    padding: 8px;
+    display: grid;
+    gap: 4px;
+}
+
+.inline-metric-item .label,
+.inline-recommendation .label {
+    color: #aac2df;
+    font-size: 0.7rem;
+}
+
+.inline-metric-item .value {
+    color: #f2f8ff;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.inline-recommendation {
+    margin-top: 10px;
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    background: rgba(9, 22, 42, 0.5);
+    padding: 8px 10px;
+}
+
+.inline-recommendation p {
+    color: #dbe8fa;
+    font-size: 0.78rem;
+    margin-top: 4px;
+}
+
+.logbook-container {
+    display: grid;
+    gap: 10px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.logbook-item {
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(8, 22, 43, 0.92), rgba(6, 17, 34, 0.92));
+    padding: 12px;
+    transition: transform 0.22s ease, border-color 0.22s ease;
+}
+
+.logbook-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+}
+
+.logbook-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.logbook-header h4 {
+    font-size: 0.95rem;
+    color: #f3f9ff;
+}
+
+.logbook-header span {
+    font-size: 0.72rem;
+    color: #9fb8d8;
+}
+
+.logbook-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 14px;
+}
+
+.logbook-grid p {
+    color: #d1e2f8;
+    font-size: 0.78rem;
+}
+
+/* ===== UX REFINEMENTS ===== */
+.health-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(8, 22, 39, 0.38);
+    color: #ecfbff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: transform 0.22s ease, border-color 0.22s ease;
+}
+
+.icon-btn:hover {
+    transform: translateY(-1px);
+    border-color: #8de5f0;
+}
+
+.gear-icon {
+    font-size: 1rem;
+}
+
+.menu-tabs {
+    border-radius: 16px;
+}
+
+.tab-button {
+    padding: 16px 26px;
+    font-size: 0.97rem;
+    font-weight: 700;
+    position: relative;
+}
+
+.tab-button::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 6px;
+    height: 2px;
+    border-radius: 999px;
+    background: transparent;
+    transition: background 0.25s ease;
+}
+
+.tab-button:hover::after,
+.tab-button.active::after {
+    background: var(--accent);
+}
+
+.btn-compact {
+    width: auto;
+    min-width: 110px;
+    padding: 7px 12px;
+    font-size: 0.72rem;
+    justify-self: start;
+}
+
+.analysis-grid .card:first-child {
+    grid-column: 1 / -1;
+}
+
+.card {
+    transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(5, 13, 28, 0.35);
+}
+
+.results-card {
+    grid-column: 1 / -1;
+}
+
+.results-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.85fr) minmax(520px, 1.15fr);
+    gap: 12px;
+}
+
+.results-details-column,
+.results-visual-column {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+}
+
+.patient-card {
+    margin-top: 10px;
+    background: rgba(9, 22, 42, 0.48);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.patient-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+}
+
+.form-field {
+    display: grid;
+    gap: 5px;
+}
+
+.form-field label {
+    font-size: 0.72rem;
+    color: #d8e6fa;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #2f4670;
+    background: rgba(7, 18, 35, 0.8);
+    color: #f2f7ff;
+    padding: 8px 10px;
+    font-size: 0.77rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+    outline: none;
+    border-color: #6cd7e8;
+    box-shadow: 0 0 0 3px rgba(91, 216, 232, 0.14);
+}
+
+.form-field textarea {
+    resize: vertical;
+}
+
+.form-field span,
+.patient-card h3 {
+    color: #ffffff;
+}
+
+.span-all {
+    grid-column: 1 / -1;
+}
+
+#patient-summary-box p {
+    color: #d4e4f8;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.settings-modal-content {
+    max-width: 700px;
+}
+
+.settings-sections {
+    display: grid;
+    gap: 12px;
+}
+
+.settings-section {
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 12px;
+    background: var(--surface-b);
+}
+
+.settings-section h3 {
+    margin: 0 0 8px;
+}
+
+.settings-section p {
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+}
+
+.disclaimer-modal-content {
+    max-width: 560px;
+    text-align: left;
+}
+
+.disclaimer-modal-content p {
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* ===== LOGIN PAGE ===== */
+.login-page-body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+}
+
+.login-page-wrap {
+    width: min(460px, 96vw);
+}
+
+.login-card {
+    background: linear-gradient(180deg, var(--surface-a), var(--surface-b));
+    border: 1px solid var(--line-soft);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 14px 28px rgba(4, 12, 26, 0.38);
+}
+
+.login-card h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #ffffff;
+    font-size: 2rem;
+    line-height: 1.1;
+    margin-bottom: 10px;
+}
+
+.login-subtitle,
+.login-hint {
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+}
+
+.login-subtitle {
+    margin-bottom: 16px;
+}
+
+.login-form {
+    display: grid;
+    gap: 10px;
+}
+
+.login-form .btn-primary {
+    margin-top: 6px;
+}
+
+.login-error {
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.1);
+    color: #ffc9c9;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 1180px) {
+    .results-layout,
+    .patient-form-grid,
+    .logbook-grid,
+    .inline-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .health-panel {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 780px) {
+    .tab-button {
+        font-size: 0.9rem;
+        padding: 13px 16px;
+    }
+
+    .results-layout {
+        gap: 8px;
+    }
+}

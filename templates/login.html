@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Glaucoma Detection System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-theme="night" class="login-page-body">
+    <div class="login-page-wrap">
+        <div class="login-card">
+            <h1>Glaucoma Detection System</h1>
+            <p class="login-subtitle">Sign in to access analysis, patient records, and history.</p>
+            <form id="login-form" class="login-form" autocomplete="off">
+                <div class="form-field">
+                    <label for="username">Username</label>
+                    <input id="username" name="username" type="text" placeholder="Enter username" required>
+                </div>
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" placeholder="Enter password" required>
+                </div>
+                <button class="btn-primary" type="submit">Sign In</button>
+                <p id="login-error" class="login-error hidden"></p>
+                <p class="login-hint">Default credentials: admin / admin123 (change via APP_USERNAME and APP_PASSWORD env vars).</p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const errorEl = document.getElementById('login-error');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            errorEl.classList.add('hidden');
+            errorEl.textContent = '';
+
+            const payload = {
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value
+            };
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Login failed');
+                }
+                window.location.href = '/';
+            } catch (err) {
+                errorEl.textContent = err.message;
+                errorEl.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
