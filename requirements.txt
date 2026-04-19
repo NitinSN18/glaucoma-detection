@@ -8,3 +8,4 @@ opencv-python
 scipy
 segmentation-models-pytorch
 timm
+ python-pptx

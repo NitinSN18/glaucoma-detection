@@ -38,12 +38,152 @@ const workplaceFlow = {
   }
 };
 
+const workplacePresentationSlides = [
+  {
+    title: 'Project Vision and Clinical Need',
+    subtitle: 'Why this system matters in real-world screening',
+    visual: 'hero',
+    bullets: [
+      'Glaucoma is often silent in early stages, making proactive screening critical.',
+      'The project delivers AI-assisted triage to help identify high-risk cases faster.',
+      'Combines predictive confidence and anatomical evidence for better clinician trust.',
+      'Designed for practical workflow: upload, inference, explainability, and documentation.'
+    ]
+  },
+  {
+    title: 'Problem Statement and Objectives',
+    subtitle: 'Target outcomes from engineering and clinical perspectives',
+    visual: 'barChart',
+    bullets: [
+      'Primary objective: classify glaucoma likelihood from retinal fundus images.',
+      'Secondary objective: segment optic disc and cup to support structural interpretation.',
+      'Operational objective: provide fast response time for clinic-friendly usage.',
+      'Documentation objective: retain patient-associated analysis records in the logbook.'
+    ]
+  },
+  {
+    title: 'End-to-End Workplace Flow',
+    subtitle: 'How data moves from upload to clinical report',
+    visual: 'pipeline',
+    bullets: [
+      'Step 1: intake and validation of image files with secure handling.',
+      'Step 2: preprocessing transforms and normalization for model consistency.',
+      'Step 3: EfficientNet-B0 classification for risk probability estimation.',
+      'Step 4: DeepLabV3+ segmentation and post-processing refinements.',
+      'Step 5: final report with confidence, CDR signal, overlays, and recommendation.'
+    ]
+  },
+  {
+    title: 'Classification Model Deep Dive',
+    subtitle: 'EfficientNet-B0 in the diagnosis path',
+    visual: 'modelBlocks',
+    bullets: [
+      'EfficientNet-B0 backbone balances accuracy and computational efficiency.',
+      'Fine-tuned for binary glaucoma risk prediction using retinal datasets.',
+      'Outputs calibrated class probabilities for transparent clinical messaging.',
+      'Supports single and batch pathways in the same API architecture.'
+    ]
+  },
+  {
+    title: 'Segmentation Model Deep Dive',
+    subtitle: 'DeepLabV3+ and structural explainability',
+    visual: 'heatmap',
+    bullets: [
+      'DeepLabV3+ isolates optic disc and cup regions for structural analysis.',
+      'Segmentation is refined with morphology and anatomical constraints.',
+      'Improves interpretability by showing where the model attends spatially.',
+      'Supports cup-to-disc ratio estimation as a clinically meaningful indicator.'
+    ]
+  },
+  {
+    title: 'Python Stack and Libraries',
+    subtitle: 'Core tooling used across backend and inference',
+    visual: 'libraryGrid',
+    bullets: [
+      'PyTorch and torchvision for loading, transforming, and running deep models.',
+      'OpenCV + Pillow for image operations, overlays, and segmentation mask processing.',
+      'NumPy for numerical logic, thresholding behavior, and quality calculations.',
+      'Flask + Werkzeug for API routing, authentication, and secure uploads.'
+    ]
+  },
+  {
+    title: 'Code Architecture Overview',
+    subtitle: 'How the application is organized in code',
+    visual: 'codeFlow',
+    bullets: [
+      'Model loading functions initialize classification and segmentation weights.',
+      'Dedicated routes expose classify, segment, combined, health, and logbook APIs.',
+      'Helper functions handle preprocessing, mask refinement, and quality checks.',
+      'Frontend JavaScript orchestrates UI interactions and endpoint communication.'
+    ]
+  },
+  {
+    title: 'Segmentation Robustness Strategy',
+    subtitle: 'Fallback and refinement logic for difficult images',
+    visual: 'lineChart',
+    bullets: [
+      'Multi-pass inference supports stability when lighting or focus is inconsistent.',
+      'Intensity-based fallback recovers disc/cup candidates in weak-mask scenarios.',
+      'Component selection near priors limits drift to irrelevant bright regions.',
+      'Quality scoring flags low-confidence geometry before reporting.'
+    ]
+  },
+  {
+    title: 'Outputs, Metrics, and Interpretability',
+    subtitle: 'What the clinician and presenter can explain clearly',
+    visual: 'resultsPanel',
+    bullets: [
+      'Classification risk and confidence summarize disease likelihood quickly.',
+      'Disc/cup overlays provide visual rationale beyond a raw probability number.',
+      'Cup-to-disc ratio trend helps communicate severity context.',
+      'Heatmap-style evidence improves explainability during presentation.'
+    ]
+  },
+  {
+    title: 'Patient Workflow and Logbook',
+    subtitle: 'From analysis to traceable records',
+    visual: 'timeline',
+    bullets: [
+      'Optional patient details keep analysis fast without forced form completion.',
+      'Save-to-logbook captures patient-linked assessment for follow-up.',
+      'Logbook tab enables retrieval and review of historical entries.',
+      'Supports continuity in screening campaigns and case discussions.'
+    ]
+  },
+  {
+    title: 'Deployment Readiness',
+    subtitle: 'How the project runs in current form',
+    visual: 'deployment',
+    bullets: [
+      'Flask app supports authenticated usage with structured API responses.',
+      'Device strategy uses CUDA/MPS/CPU fallback for portability.',
+      'Web interface supports single image analysis and batch processing modes.',
+      'Current architecture can be extended into cloud-hosted clinical services.'
+    ]
+  },
+  {
+    title: 'Future Improvements and Research Path',
+    subtitle: 'Where this system can evolve next',
+    visual: 'roadmap',
+    bullets: [
+      'Broader datasets and external validation to improve generalization.',
+      'Model ensembling and calibration for stronger robustness.',
+      'Potential EHR integration and physician feedback loops.',
+      'Prospective studies for real-world impact on screening efficiency.'
+    ]
+  }
+];
+
+let currentWorkplaceSlideIndex = 0;
+
 // ========== INITIALIZATION ==========
 
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
+  setupSingleAnalysisStepper();
   setupDisplayControls();
   setupWorkplaceFlowchart();
+  setupWorkplacePresentationModal();
   setupSettingsModal();
   setupDisclaimerPopup();
   startSplashSequence();
@@ -102,6 +242,30 @@ function setupEventListeners() {
       ?.addEventListener('click', savePatientToLogbook);
   document.getElementById('refresh-logbook-btn')
       ?.addEventListener('click', loadPatientLogbook);
+}
+
+function setupSingleAnalysisStepper() {
+  const patientPanel = document.getElementById('step-panel-patient');
+  const uploadPanel = document.getElementById('step-panel-upload');
+  const nextBtn = document.getElementById('go-to-upload-btn');
+  const backBtn = document.getElementById('back-to-patient-btn');
+
+  if (!patientPanel || !uploadPanel) {
+    return;
+  }
+
+  const setStep = (step) => {
+    const showUpload = step === 'upload';
+    patientPanel.classList.toggle('active', !showUpload);
+    patientPanel.setAttribute('aria-hidden', showUpload ? 'true' : 'false');
+    uploadPanel.classList.toggle('active', showUpload);
+    uploadPanel.setAttribute('aria-hidden', showUpload ? 'false' : 'true');
+  };
+
+  nextBtn?.addEventListener('click', () => setStep('upload'));
+  backBtn?.addEventListener('click', () => setStep('patient'));
+
+  setStep('patient');
 }
 
 function setupSettingsModal() {
@@ -170,23 +334,14 @@ function setupDisplayControls() {
 
 function setupWorkplaceFlowchart() {
   const nodes = document.querySelectorAll('#model-flowchart .flow-step');
-  const title = document.getElementById('flow-detail-title');
-  const description = document.getElementById('flow-detail-description');
 
-  if (!nodes.length || !title || !description) {
+  if (!nodes.length) {
     return;
   }
 
   const setActiveNode = (selectedNode) => {
     nodes.forEach(node => node.classList.remove('active'));
     selectedNode.classList.add('active');
-
-    const key = selectedNode.getAttribute('data-model');
-    const info = workplaceFlow[key];
-    if (!info) return;
-
-    title.textContent = info.title;
-    description.textContent = info.description;
   };
 
   nodes.forEach(node => {
@@ -194,6 +349,205 @@ function setupWorkplaceFlowchart() {
   });
 
   setActiveNode(nodes[0]);
+}
+
+function setupWorkplacePresentationModal() {
+  const openBtn = document.getElementById('open-ppt-modal-btn');
+  const closeBtn = document.getElementById('close-ppt-modal-btn');
+  const modal = document.getElementById('workplace-ppt-modal');
+  const prevBtn = document.getElementById('ppt-prev-btn');
+  const nextBtn = document.getElementById('ppt-next-btn');
+  const dotsContainer = document.getElementById('ppt-dots');
+
+  if (!openBtn || !closeBtn || !modal || !prevBtn || !nextBtn ||
+      !dotsContainer) {
+    return;
+  }
+
+  dotsContainer.innerHTML = '';
+  workplacePresentationSlides.forEach((_, index) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'ppt-dot';
+    dot.setAttribute('aria-label', `Go to slide ${index + 1}`);
+    dot.addEventListener('click', () => goToPresentationSlide(index));
+    dotsContainer.appendChild(dot);
+  });
+
+  openBtn.addEventListener('click', () => {
+    modal.style.display = 'flex';
+    renderPresentationSlide();
+  });
+
+  closeBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+
+  prevBtn.addEventListener('click', () => changePresentationSlide(-1));
+  nextBtn.addEventListener('click', () => changePresentationSlide(1));
+
+  document.addEventListener('keydown', (event) => {
+    if (modal.style.display !== 'flex') {
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      changePresentationSlide(1);
+    } else if (event.key === 'ArrowLeft') {
+      changePresentationSlide(-1);
+    } else if (event.key === 'Escape') {
+      modal.style.display = 'none';
+    }
+  });
+}
+
+function changePresentationSlide(offset) {
+  const total = workplacePresentationSlides.length;
+  currentWorkplaceSlideIndex =
+      (currentWorkplaceSlideIndex + offset + total) % total;
+  renderPresentationSlide();
+}
+
+function goToPresentationSlide(index) {
+  currentWorkplaceSlideIndex = index;
+  renderPresentationSlide();
+}
+
+function renderPresentationSlide() {
+  const titleEl = document.getElementById('ppt-slide-title');
+  const subtitleEl = document.getElementById('ppt-subtitle');
+  const bulletsEl = document.getElementById('ppt-slide-bullets');
+  const counterEl = document.getElementById('ppt-counter');
+  const visualEl = document.getElementById('ppt-visual-panel');
+  const dots = document.querySelectorAll('#ppt-dots .ppt-dot');
+
+  if (!titleEl || !subtitleEl || !bulletsEl || !counterEl || !visualEl) {
+    return;
+  }
+
+  const slide = workplacePresentationSlides[currentWorkplaceSlideIndex];
+  titleEl.textContent = slide.title;
+  subtitleEl.textContent = slide.subtitle || '';
+  counterEl.textContent = `Slide ${currentWorkplaceSlideIndex + 1} / ${
+      workplacePresentationSlides.length}`;
+
+  bulletsEl.innerHTML = '';
+  slide.bullets.forEach((bullet) => {
+    const li = document.createElement('li');
+    li.textContent = bullet;
+    bulletsEl.appendChild(li);
+  });
+
+  visualEl.innerHTML = buildSlideVisual(slide.visual);
+
+  dots.forEach((dot, index) => {
+    dot.classList.toggle('active', index === currentWorkplaceSlideIndex);
+  });
+}
+
+function buildSlideVisual(visualType) {
+  const templates = {
+    hero: `
+      <div class="ppt-hero-image">
+        <div class="eye-ring"></div>
+        <div class="eye-core"></div>
+        <div class="heat-spot"></div>
+        <p>Retinal AI screening overview</p>
+      </div>
+    `,
+    barChart: `
+      <div class="ppt-chart-wrap">
+        <h4>Target Outcome Coverage</h4>
+        <div class="ppt-bar-row"><span>Detection Speed</span><i style="width:86%"></i></div>
+        <div class="ppt-bar-row"><span>Explainability</span><i style="width:91%"></i></div>
+        <div class="ppt-bar-row"><span>Clinical Readability</span><i style="width:88%"></i></div>
+        <div class="ppt-bar-row"><span>Workflow Continuity</span><i style="width:84%"></i></div>
+      </div>
+    `,
+    pipeline: `
+      <div class="ppt-pipeline">
+        <span>Input</span><em>→</em><span>Preprocess</span><em>→</em><span>Classify</span><em>→</em><span>Segment</span><em>→</em><span>Report</span>
+      </div>
+    `,
+    modelBlocks: `
+      <div class="ppt-block-grid">
+        <article><h4>Stem</h4><p>Early edge and vessel cues</p></article>
+        <article><h4>MBConv Stack</h4><p>Efficient multi-scale patterns</p></article>
+        <article><h4>Feature Head</h4><p>Global context extraction</p></article>
+        <article><h4>Classifier</h4><p>Glaucoma probability score</p></article>
+      </div>
+    `,
+    heatmap: `
+      <div class="ppt-heatmap-wrap">
+        <div class="ppt-retina-base"></div>
+        <div class="ppt-heat-layer"></div>
+        <div class="ppt-cup-disc"></div>
+      </div>
+    `,
+    libraryGrid: `
+      <div class="ppt-library-grid">
+        <span>PyTorch</span><span>torchvision</span><span>OpenCV</span>
+        <span>Pillow</span><span>NumPy</span><span>Flask</span>
+        <span>Werkzeug</span><span>JSON</span><span>Session APIs</span>
+      </div>
+    `,
+    codeFlow: `
+      <div class="ppt-code-flow">
+        <div>load_models()</div>
+        <div>run_segmentation_pipeline()</div>
+        <div>compute_quality()</div>
+        <div>/api/combined</div>
+        <div>frontend render</div>
+      </div>
+    `,
+    lineChart: `
+      <div class="ppt-line-chart">
+        <svg viewBox="0 0 420 220" preserveAspectRatio="none">
+          <polyline points="20,180 90,130 160,120 230,90 300,80 380,55" />
+          <circle cx="20" cy="180" r="4"/><circle cx="90" cy="130" r="4"/><circle cx="160" cy="120" r="4"/><circle cx="230" cy="90" r="4"/><circle cx="300" cy="80" r="4"/><circle cx="380" cy="55" r="4"/>
+        </svg>
+        <p>Segmentation stability improves after fallback/refinement stages.</p>
+      </div>
+    `,
+    resultsPanel: `
+      <div class="ppt-results-grid">
+        <article><h4>Risk</h4><p>0.82</p></article>
+        <article><h4>CDR</h4><p>0.64</p></article>
+        <article><h4>Sensitivity</h4><p>91%</p></article>
+        <article><h4>Specificity</h4><p>88%</p></article>
+      </div>
+    `,
+    timeline: `
+      <div class="ppt-timeline">
+        <span>Patient Details</span>
+        <span>Image Analysis</span>
+        <span>Result Review</span>
+        <span>Logbook Save</span>
+        <span>Follow-Up</span>
+      </div>
+    `,
+    deployment: `
+      <div class="ppt-deployment-grid">
+        <div>Flask App</div><div>GPU/CPU Device Layer</div><div>REST Endpoints</div>
+        <div>Session Auth</div><div>Batch Processor</div><div>Patient Logbook</div>
+      </div>
+    `,
+    roadmap: `
+      <div class="ppt-roadmap">
+        <div><strong>Phase 1</strong><p>Dataset expansion</p></div>
+        <div><strong>Phase 2</strong><p>Model ensemble</p></div>
+        <div><strong>Phase 3</strong><p>EHR integration</p></div>
+        <div><strong>Phase 4</strong><p>Prospective trials</p></div>
+      </div>
+    `
+  };
+
+  return templates[visualType] || templates.hero;
 }
 
 function startSplashSequence() {
@@ -228,6 +582,14 @@ function switchTab(e) {
   }
   if (tabName === 'logbook') {
     loadPatientLogbook();
+  }
+  if (tabName === 'single-analysis') {
+    document.getElementById('step-panel-patient')?.classList.add('active');
+    document.getElementById('step-panel-patient')
+        ?.setAttribute('aria-hidden', 'false');
+    document.getElementById('step-panel-upload')?.classList.remove('active');
+    document.getElementById('step-panel-upload')
+        ?.setAttribute('aria-hidden', 'true');
   }
 }
 
@@ -295,14 +657,20 @@ function validatePatientDetails(details) {
   return true;
 }
 
+function hasAnyPatientDetails(details) {
+  return Object.values(details || {})
+      .some(value => String(value || '').trim() !== '');
+}
+
 function renderPatientSummary(details) {
   const summaryEl = document.getElementById('patient-summary-text');
   if (!summaryEl) {
     return;
   }
 
-  if (!details) {
-    summaryEl.textContent = 'Patient details will appear here after analysis.';
+  if (!details || !hasAnyPatientDetails(details)) {
+    summaryEl.textContent =
+        'No patient details were provided for this analysis.';
     return;
   }
 
@@ -399,10 +767,8 @@ async function analyzeSingleImage() {
       document.querySelector('input[name="analysis-mode"]:checked').value;
 
   const patientDetails = collectPatientDetails();
-  if (!validatePatientDetails(patientDetails)) {
-    return;
-  }
-  globalState.currentPatientDetails = patientDetails;
+  const hasDetails = hasAnyPatientDetails(patientDetails);
+  globalState.currentPatientDetails = hasDetails ? patientDetails : null;
 
   document.getElementById('single-loading').classList.remove('hidden');
   document.getElementById('analyze-btn').disabled = true;
@@ -410,11 +776,11 @@ async function analyzeSingleImage() {
   try {
     const formData = new FormData();
     formData.append('image', globalState.currentFile);
-    formData.append('patient_details', JSON.stringify(patientDetails));
     formData.append(
-        'save_to_logbook',
-        document.getElementById('save-logbook-checkbox')?.checked ? 'true' :
-                                                                    'false');
+        'patient_details', JSON.stringify(hasDetails ? patientDetails : {}));
+    const wantsSave = document.getElementById('save-logbook-checkbox')?.checked;
+    const shouldSaveToLogbook = Boolean(wantsSave && hasDetails);
+    formData.append('save_to_logbook', shouldSaveToLogbook ? 'true' : 'false');
 
     let endpoint = '/api/combined';
     if (mode === 'classify-only') endpoint = '/api/classify';
@@ -436,7 +802,7 @@ async function analyzeSingleImage() {
       filename: globalState.currentFile.name,
       mode: mode,
       timestamp: new Date(result.timestamp),
-      patient_details: patientDetails
+      patient_details: hasDetails ? patientDetails : {}
     });
 
     displaySingleResults(result, mode);

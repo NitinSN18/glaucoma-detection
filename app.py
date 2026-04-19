@@ -26,8 +26,8 @@ app.config['PATIENT_RECORDS_FILE'] = os.getenv('PATIENT_RECORDS_FILE', 'records/
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(Path(app.config['PATIENT_RECORDS_FILE']).parent, exist_ok=True)
 
-AUTH_USERNAME = os.getenv('APP_USERNAME', 'admin')
-AUTH_PASSWORD = os.getenv('APP_PASSWORD', 'admin123')
+AUTH_USERNAME = os.getenv('APP_USERNAME', 'host')
+AUTH_PASSWORD = os.getenv('APP_PASSWORD', '123')
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
@@ -565,15 +565,26 @@ def refine_disc_from_intensity(rgb_img, valid_mask, center_xy, base_disc):
 
     base_area = int(np.sum(base_disc > 0))
     cand_area = int(np.sum(merged > 0))
+    valid_area = int(np.sum(valid_mask > 0))
+    if cand_area <= 0:
+        return base_disc
     if base_area <= 0:
         return merged
 
-    # Only replace the model mask if the candidate is reasonably shaped and not wildly different in size.
+    cand_area_ratio = cand_area / max(1, valid_area)
+
+    # Core fix: if model disc is tiny/noisy, allow a plausible larger candidate.
+    if base_area < max(160, int(0.0012 * valid_area)):
+        cand_circularity, cand_solidity = _shape_features(merged)
+        if 0.002 <= cand_area_ratio <= 0.28 and cand_solidity >= 0.60 and cand_circularity >= 0.10:
+            return merged
+
+    # Conservative path for normal cases.
     area_ratio = cand_area / max(1, base_area)
-    if 0.70 <= area_ratio <= 1.60:
+    if 0.70 <= area_ratio <= 2.40 and 0.002 <= cand_area_ratio <= 0.30:
         base_perim = max(1.0, cv2.arcLength(max(cv2.findContours((base_disc > 0).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0], key=cv2.contourArea) if cv2.findContours((base_disc > 0).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0] else np.array([]), True))
         cand_perim = max(1.0, cv2.arcLength(max(cv2.findContours((merged > 0).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0], key=cv2.contourArea) if cv2.findContours((merged > 0).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0] else np.array([]), True))
-        if cand_perim > 0 and base_perim / cand_perim >= 0.75:
+        if cand_perim > 0 and base_perim / cand_perim >= 0.55:
             return merged
 
     return base_disc
@@ -884,9 +895,11 @@ def run_segmentation_pipeline(original_img_pil):
     cup_mask = np.where(disc_mask > 0, cup_mask, 0).astype(np.uint8)
     cup_mask = regularize_with_ellipse(cup_mask, blend=0.08)
 
-    # Use intensity-based refinement only as a fallback when the model mask collapses.
-    if np.sum(disc_mask > 0) < max(80, int(0.0005 * h0 * w0)):
+    # Use intensity-based refinement when model disc is too small or weak.
+    if np.sum(disc_mask > 0) < max(220, int(0.0022 * h0 * w0)):
         disc_mask = refine_disc_from_intensity(original_img_np, fundus_mask_full, (disc_peak_x, disc_peak_y), disc_mask)
+        # Secondary rescue from prior center helps when model peak drifts to a false bright spot.
+        disc_mask = refine_disc_from_intensity(original_img_np, fundus_mask_full, (prior_x, prior_y), disc_mask)
         disc_mask = regularize_with_ellipse(disc_mask, blend=0.12)
 
     if np.sum(cup_mask > 0) < max(40, int(0.00012 * h0 * w0)):
@@ -1419,6 +1432,36 @@ def api_save_patient_record():
     }
     save_patient_record(record)
     return jsonify({'success': True, 'record': record}), 201
+
+
+@app.route('/api/generate-presentation', methods=['GET'])
+@login_required(api=True)
+def api_generate_presentation():
+    """Generate and serve the 10-slide presentation."""
+    try:
+        from generate_presentation import create_presentation
+        
+        # Create presentation in memory
+        prs = create_presentation()
+        
+        # Save to bytes buffer
+        presentation_buffer = io.BytesIO()
+        prs.save(presentation_buffer)
+        presentation_buffer.seek(0)
+        
+        # Return as file download
+        from flask import send_file
+        return send_file(
+            presentation_buffer,
+            mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            as_attachment=True,
+            download_name=f'Glaucoma_Detection_Project_{datetime.now().strftime("%Y%m%d")}.pptx'
+        )
+    except ImportError:
+        return jsonify({'error': 'python-pptx library not installed. Run: pip install python-pptx'}), 400
+    except Exception as e:
+        print(f"Error generating presentation: {e}")
+        return jsonify({'error': f'Failed to generate presentation: {str(e)}'}), 500
 
 
 if __name__ == '__main__':

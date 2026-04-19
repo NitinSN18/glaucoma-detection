@@ -68,154 +68,167 @@
         <div id="single-analysis" class="tab-content active">
             <div class="content-grid analysis-grid">
                 <div class="card">
-                    <div class="patient-card">
-                        <div class="section-title-row">
-                            <h3>Patient Details</h3>
-                            <button class="btn-secondary btn-compact" id="save-patient-btn" type="button">Save to Logbook</button>
-                        </div>
-                        <div class="patient-form-grid">
-                            <div class="form-field">
-                                <label for="patient-first-name">First Name *</label>
-                                <input id="patient-first-name" type="text" placeholder="Enter first name" required>
+                    <div class="single-analysis-stepper" id="single-analysis-stepper">
+                        <section class="single-step-panel active" id="step-panel-patient" aria-hidden="false">
+                            <div class="patient-card">
+                                <div class="section-title-row">
+                                    <h3>Patient Details</h3>
+                                    <button class="btn-secondary btn-compact" id="save-patient-btn" type="button">Save to Logbook</button>
+                                </div>
+                                <div class="patient-form-grid">
+                                    <div class="form-field">
+                                        <label for="patient-first-name">First Name</label>
+                                        <input id="patient-first-name" type="text" placeholder="Enter first name">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-last-name">Last Name</label>
+                                        <input id="patient-last-name" type="text" placeholder="Enter last name">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-id">Patient ID</label>
+                                        <input id="patient-id" type="text" placeholder="Hospital patient ID">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-age">Age</label>
+                                        <input id="patient-age" type="number" min="1" max="120" placeholder="Age">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-gender">Gender</label>
+                                        <select id="patient-gender">
+                                            <option value="">Select</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-email">Email</label>
+                                        <input id="patient-email" type="email" placeholder="Enter email">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-phone">Phone</label>
+                                        <input id="patient-phone" type="text" placeholder="Enter phone number">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-eye">Eye Under Examination</label>
+                                        <select id="patient-eye">
+                                            <option value="">Select</option>
+                                            <option value="left">Left Eye</option>
+                                            <option value="right">Right Eye</option>
+                                            <option value="both">Both Eyes</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-diabetes">Diabetes</label>
+                                        <select id="patient-diabetes">
+                                            <option value="">Unknown</option>
+                                            <option value="yes">Yes</option>
+                                            <option value="no">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-hypertension">Hypertension</label>
+                                        <select id="patient-hypertension">
+                                            <option value="">Unknown</option>
+                                            <option value="yes">Yes</option>
+                                            <option value="no">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-family-history">Family History of Glaucoma</label>
+                                        <select id="patient-family-history">
+                                            <option value="">Unknown</option>
+                                            <option value="yes">Yes</option>
+                                            <option value="no">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-allergies">Known Allergies</label>
+                                        <select id="patient-allergies">
+                                            <option value="">Unknown</option>
+                                            <option value="no">No</option>
+                                            <option value="yes">Yes</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-allergy-details">If yes, allergy details</label>
+                                        <input id="patient-allergy-details" type="text" placeholder="Drug or substance allergies">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-medications">Current Ocular/Systemic Medications</label>
+                                        <input id="patient-medications" type="text" placeholder="E.g. timolol, steroids, etc.">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-eye-surgery">Past Eye Surgery</label>
+                                        <select id="patient-eye-surgery">
+                                            <option value="">Unknown</option>
+                                            <option value="yes">Yes</option>
+                                            <option value="no">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="patient-chief-complaint">Chief Complaint</label>
+                                        <input id="patient-chief-complaint" type="text" placeholder="Blurred vision, headache, etc.">
+                                    </div>
+                                    <div class="form-field span-all">
+                                        <label for="patient-notes">Clinical Notes</label>
+                                        <textarea id="patient-notes" rows="2" placeholder="IOP, optic nerve findings, follow-up plan"></textarea>
+                                    </div>
+                                    <div class="form-field span-all checkbox-field">
+                                        <label>
+                                            <input id="save-logbook-checkbox" type="checkbox" checked>
+                                            Save this analysis with patient details to logbook
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-field">
-                                <label for="patient-last-name">Last Name *</label>
-                                <input id="patient-last-name" type="text" placeholder="Enter last name" required>
+                            <div class="step-nav-row">
+                                <p class="step-help-text">Patient details are optional. Continue to upload when ready.</p>
+                                <button class="step-arrow-btn" id="go-to-upload-btn" type="button" aria-label="Go to upload retinal image">→</button>
                             </div>
-                            <div class="form-field">
-                                <label for="patient-id">Patient ID</label>
-                                <input id="patient-id" type="text" placeholder="Hospital patient ID">
+                        </section>
+
+                        <section class="single-step-panel" id="step-panel-upload" aria-hidden="true">
+                            <div class="section-title-row">
+                                <h2>Upload Retinal Image</h2>
+                                <button class="btn-secondary btn-compact" id="back-to-patient-btn" type="button">← Back</button>
                             </div>
-                            <div class="form-field">
-                                <label for="patient-age">Age *</label>
-                                <input id="patient-age" type="number" min="1" max="120" placeholder="Age" required>
+                            <div class="upload-area" id="single-upload-area">
+                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p>Drag and drop your retinal image here</p>
+                                <p class="upload-hint">or click to select</p>
+                                <input type="file" id="single-image-input" accept="image/png,image/jpeg,image/jpg,image/bmp" hidden>
                             </div>
-                            <div class="form-field">
-                                <label for="patient-gender">Gender *</label>
-                                <select id="patient-gender" required>
-                                    <option value="">Select</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                </select>
+
+                            <div id="single-preview" class="image-preview hidden">
+                                <img id="single-preview-img" alt="Preview">
+                                <button class="btn-secondary btn-compact" onclick="resetSingleImage()">Remove</button>
                             </div>
-                            <div class="form-field">
-                                <label for="patient-email">Email</label>
-                                <input id="patient-email" type="email" placeholder="Enter email">
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-phone">Phone</label>
-                                <input id="patient-phone" type="text" placeholder="Enter phone number">
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-eye">Eye Under Examination</label>
-                                <select id="patient-eye">
-                                    <option value="">Select</option>
-                                    <option value="left">Left Eye</option>
-                                    <option value="right">Right Eye</option>
-                                    <option value="both">Both Eyes</option>
-                                </select>
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-diabetes">Diabetes</label>
-                                <select id="patient-diabetes">
-                                    <option value="">Unknown</option>
-                                    <option value="yes">Yes</option>
-                                    <option value="no">No</option>
-                                </select>
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-hypertension">Hypertension</label>
-                                <select id="patient-hypertension">
-                                    <option value="">Unknown</option>
-                                    <option value="yes">Yes</option>
-                                    <option value="no">No</option>
-                                </select>
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-family-history">Family History of Glaucoma</label>
-                                <select id="patient-family-history">
-                                    <option value="">Unknown</option>
-                                    <option value="yes">Yes</option>
-                                    <option value="no">No</option>
-                                </select>
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-allergies">Known Allergies</label>
-                                <select id="patient-allergies">
-                                    <option value="">Unknown</option>
-                                    <option value="no">No</option>
-                                    <option value="yes">Yes</option>
-                                </select>
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-allergy-details">If yes, allergy details</label>
-                                <input id="patient-allergy-details" type="text" placeholder="Drug or substance allergies">
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-medications">Current Ocular/Systemic Medications</label>
-                                <input id="patient-medications" type="text" placeholder="E.g. timolol, steroids, etc.">
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-eye-surgery">Past Eye Surgery</label>
-                                <select id="patient-eye-surgery">
-                                    <option value="">Unknown</option>
-                                    <option value="yes">Yes</option>
-                                    <option value="no">No</option>
-                                </select>
-                            </div>
-                            <div class="form-field">
-                                <label for="patient-chief-complaint">Chief Complaint</label>
-                                <input id="patient-chief-complaint" type="text" placeholder="Blurred vision, headache, etc.">
-                            </div>
-                            <div class="form-field span-all">
-                                <label for="patient-notes">Clinical Notes</label>
-                                <textarea id="patient-notes" rows="2" placeholder="IOP, optic nerve findings, follow-up plan"></textarea>
-                            </div>
-                            <div class="form-field span-all checkbox-field">
+
+                            <div class="analysis-mode">
                                 <label>
-                                    <input id="save-logbook-checkbox" type="checkbox" checked>
-                                    Save this analysis with patient details to logbook
+                                    <input type="radio" name="analysis-mode" value="combined" checked>
+                                    <strong>Combined</strong>: Classification + Segmentation
+                                </label>
+                                <label>
+                                    <input type="radio" name="analysis-mode" value="classify-only">
+                                    <strong>Classification Only</strong>: Glaucoma Detection
+                                </label>
+                                <label>
+                                    <input type="radio" name="analysis-mode" value="segment-only">
+                                    <strong>Segmentation Only</strong>: Optic Disc and Cup
                                 </label>
                             </div>
-                        </div>
-                    </div>
 
-                    <h2>Upload Retinal Image</h2>
-                    <div class="upload-area" id="single-upload-area">
-                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <p>Drag and drop your retinal image here</p>
-                        <p class="upload-hint">or click to select</p>
-                        <input type="file" id="single-image-input" accept="image/png,image/jpeg,image/jpg,image/bmp" hidden>
+                            <button class="btn-primary" id="analyze-btn" onclick="analyzeSingleImage()">
+                                <span>Analyze Image</span>
+                            </button>
+                        </section>
                     </div>
-
-                    <div id="single-preview" class="image-preview hidden">
-                        <img id="single-preview-img" alt="Preview">
-                        <button class="btn-secondary btn-compact" onclick="resetSingleImage()">Remove</button>
-                    </div>
-
-                    <div class="analysis-mode">
-                        <label>
-                            <input type="radio" name="analysis-mode" value="combined" checked>
-                            <strong>Combined</strong>: Classification + Segmentation
-                        </label>
-                        <label>
-                            <input type="radio" name="analysis-mode" value="classify-only">
-                            <strong>Classification Only</strong>: Glaucoma Detection
-                        </label>
-                        <label>
-                            <input type="radio" name="analysis-mode" value="segment-only">
-                            <strong>Segmentation Only</strong>: Optic Disc and Cup
-                        </label>
-                    </div>
-
-                    <button class="btn-primary" id="analyze-btn" onclick="analyzeSingleImage()">
-                        <span>Analyze Image</span>
-                    </button>
                 </div>
 
                 <div class="card results-card" id="results-card" style="display: none;">
@@ -395,7 +408,13 @@
         <div id="workplace" class="tab-content">
             <div class="content-grid education-grid">
                 <div class="card education-card">
-                    <h2>Workplace Flow</h2>
+                    <div class="section-title-row">
+                        <h2>Workplace Flow</h2>
+                        <button class="btn-primary btn-compact ppt-launch-btn" id="open-ppt-modal-btn" type="button" aria-label="Open project presentation">
+                            <span class="ppt-icon">PPT</span>
+                            <span>Open Presentation</span>
+                        </button>
+                    </div>
                     <p class="education-intro">This pipeline combines image understanding and anatomical segmentation so each decision is both predictive and explainable.</p>
 
                     <div class="flowchart" id="model-flowchart">
@@ -430,46 +449,127 @@
                         </button>
                     </div>
 
-                    <div class="flow-detail" id="flow-detail-box">
-                        <h3 id="flow-detail-title">Input</h3>
-                        <p id="flow-detail-description">Upload a high quality retinal image to begin analysis.</p>
+                    <div class="flow-deep-grid">
+                        <article class="flow-deep-card">
+                            <h3>Step 1: Image Intake & Validation</h3>
+                            <p>Accepts retinal fundus images from single and batch workflows, verifies extensions, size limits, and upload integrity before inference.</p>
+                            <ul>
+                                <li>Secure upload handling using Flask and Werkzeug</li>
+                                <li>Multi-format support (JPG, PNG, JPEG)</li>
+                                <li>Session-linked workflow logging</li>
+                            </ul>
+                        </article>
+
+                        <article class="flow-deep-card">
+                            <h3>Step 2: Preprocessing Pipeline</h3>
+                            <p>Normalizes image intensity and aligns input dimensions for stable model behavior across diverse camera devices and clinics.</p>
+                            <ul>
+                                <li>ImageNet-style normalization for classification</li>
+                                <li>Resize and tensor transforms for segmentation</li>
+                                <li>Contrast handling for low-light fundus captures</li>
+                            </ul>
+                        </article>
+
+                        <article class="flow-deep-card">
+                            <h3>Step 3: Classification Inference</h3>
+                            <p>EfficientNet-B0 estimates glaucoma risk from global retinal patterns such as vessel morphology, neuroretinal rim changes, and texture cues.</p>
+                            <ul>
+                                <li>Binary output: normal vs glaucoma likelihood</li>
+                                <li>Confidence-aware risk messaging</li>
+                                <li>Fast inference suitable for real-time review</li>
+                            </ul>
+                        </article>
+
+                        <article class="flow-deep-card">
+                            <h3>Step 4: Segmentation + Refinement</h3>
+                            <p>DeepLabV3+ segments optic disc/cup; post-processing applies morphology, anatomical priors, and fallback recovery for robustness.</p>
+                            <ul>
+                                <li>Disc and cup masks for explainability</li>
+                                <li>Cup-to-disc ratio computation</li>
+                                <li>Quality score to flag uncertain segmentation</li>
+                            </ul>
+                        </article>
+
+                        <article class="flow-deep-card">
+                            <h3>Step 5: Clinical Reporting Layer</h3>
+                            <p>Combines numeric scores with overlays and recommendations, then stores optional patient-linked records for follow-up and audit workflow.</p>
+                            <ul>
+                                <li>Unified combined/classify/segment API modes</li>
+                                <li>Visual evidence: masks and heatmaps</li>
+                                <li>Patient logbook integration</li>
+                            </ul>
+                        </article>
+                    </div>
+
+                    <div class="flow-summary-panel">
+                        <h3>Why This Workplace Design Helps</h3>
+                        <p>It keeps model logic and clinical context together: upload, inference, explanation, and documentation happen in one continuous path so reviewers can trust and present results quickly.</p>
                     </div>
                 </div>
 
-                <div class="card education-card">
-                    <h2>Model Desk</h2>
-                    <p class="education-intro">A CNN learns visual patterns in layers: edges, vessels, cup/disc shape, then diagnostic patterns linked to glaucoma.</p>
+                <div class="card education-card workplace-notes-card">
+                    <h2>Workplace Flow Explained</h2>
+                    <p class="education-intro">This panel expands the practical meaning of every step so your presentation clearly communicates how the system operates from a Python and clinical perspective.</p>
 
-                    <div class="education-metrics">
-                        <div class="metric-item">
-                            <span>Feature Extraction</span>
-                            <div class="metric-bar"><span style="width: 94%"></span></div>
-                        </div>
-                        <div class="metric-item">
-                            <span>Structural Segmentation</span>
-                            <div class="metric-bar"><span style="width: 89%"></span></div>
-                        </div>
-                        <div class="metric-item">
-                            <span>Clinical Legibility</span>
-                            <div class="metric-bar"><span style="width: 92%"></span></div>
-                        </div>
+                    <div class="workplace-note-block">
+                        <h3>Input Layer</h3>
+                        <p>The upload pipeline handles retina image intake, validates file format and size, and keeps requests tied to authenticated sessions for traceability.</p>
                     </div>
 
-                    <div class="education-points">
-                        <div>
-                            <h4>Why classification?</h4>
-                            <p>It estimates glaucoma likelihood from global retinal patterns.</p>
-                        </div>
-                        <div>
-                            <h4>Why segmentation?</h4>
-                            <p>It visualizes optic disc and cup boundaries for interpretability.</p>
-                        </div>
-                        <div>
-                            <h4>Why combine both?</h4>
-                            <p>You get a confidence score plus anatomical evidence in one report.</p>
-                        </div>
+                    <div class="workplace-note-block">
+                        <h3>Preprocessing Layer</h3>
+                        <p>Images are standardized to model-ready dimensions, normalized for stable inference, and prepared for both classification and segmentation pipelines.</p>
+                    </div>
+
+                    <div class="workplace-note-block">
+                        <h3>Model Inference Layer</h3>
+                        <p>EfficientNet-B0 estimates glaucoma risk probabilities, while DeepLabV3+ segments optic disc and cup to provide structural evidence for interpretation.</p>
+                    </div>
+
+                    <div class="workplace-note-block">
+                        <h3>Post-Processing Layer</h3>
+                        <p>Morphological cleanup, fallback strategies, and quality checks improve segmentation reliability in difficult lighting and low-contrast images.</p>
+                    </div>
+
+                    <div class="workplace-note-block">
+                        <h3>Reporting Layer</h3>
+                        <p>The application merges numeric confidence, CDR-related structure, and visual overlays into a readable decision-support output for presentation and review.</p>
+                    </div>
+
+                    <div class="workplace-note-block highlight">
+                        <h3>Presentation Value</h3>
+                        <p>You can now explain not only what the model predicts, but also how the pipeline validates and visualizes those predictions for a clinically meaningful narrative.</p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div id="workplace-ppt-modal" class="modal ppt-modal" style="display: none;">
+            <div class="modal-content ppt-modal-content" role="dialog" aria-modal="true" aria-labelledby="ppt-modal-title">
+                <button class="modal-close ppt-close" id="close-ppt-modal-btn" aria-label="Close presentation">&times;</button>
+
+                <div class="ppt-header">
+                    <div>
+                        <h2 id="ppt-modal-title">Glaucoma Detection Project Presentation</h2>
+                        <p id="ppt-subtitle" class="ppt-subtitle"></p>
+                    </div>
+                    <span id="ppt-counter" class="ppt-counter">Slide 1 / 12</span>
+                </div>
+
+                <div class="ppt-content">
+                    <section class="ppt-text-panel">
+                        <h3 id="ppt-slide-title" class="ppt-slide-title"></h3>
+                        <ul id="ppt-slide-bullets" class="ppt-slide-bullets"></ul>
+                    </section>
+
+                    <section class="ppt-visual-panel" id="ppt-visual-panel"></section>
+                </div>
+
+                <div class="ppt-footer">
+                    <button class="btn-secondary" id="ppt-prev-btn" type="button">Previous</button>
+                    <div class="ppt-dots" id="ppt-dots" aria-label="Slide navigation"></div>
+                    <button class="btn-primary" id="ppt-next-btn" type="button">Next</button>
+                    </div>
             </div>
         </div>
 
