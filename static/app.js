@@ -337,12 +337,13 @@ function startSplashSequence() {
 // ========== TAB SWITCHING ==========
 
 function switchTab(e) {
-  const tabName = e.target.getAttribute('data-tab');
+  const targetButton = e.currentTarget;
+  const tabName = targetButton.getAttribute('data-tab');
 
   document.querySelectorAll('.tab-button').forEach(btn => {
     btn.classList.remove('active');
   });
-  e.target.classList.add('active');
+  targetButton.classList.add('active');
 
   document.querySelectorAll('.tab-content').forEach(content => {
     content.classList.remove('active');
