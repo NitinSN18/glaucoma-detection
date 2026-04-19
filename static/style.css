@@ -27,17 +27,17 @@ body[data-theme="night"] {
 }
 
 body[data-theme="day"] {
-    --page-bg: linear-gradient(180deg, #ebf4ff 0%, #dce9f8 100%);
-    --surface-a: #ffffff;
-    --surface-b: #f4f8fc;
-    --surface-c: #f0f5fb;
-    --text-primary: #172d47;
-    --text-secondary: #476483;
-    --text-dim: #6a83a1;
-    --line: #c8d7ea;
-    --line-soft: #dce7f4;
-    --accent: #27b9cd;
-    --accent-2: #1ea8bd;
+    --page-bg: linear-gradient(180deg, #d8c7b0 0%, #bca88d 100%);
+    --surface-a: #efe2d0;
+    --surface-b: #e5d6c2;
+    --surface-c: #dccab3;
+    --text-primary: #3b2e22;
+    --text-secondary: #5f4c38;
+    --text-dim: #7f6950;
+    --line: #b8a188;
+    --line-soft: #cdb89f;
+    --accent: #c98748;
+    --accent-2: #b97538;
 }
 
 html,
@@ -612,7 +612,7 @@ body {
 
 .workflow-card {
     background: linear-gradient(180deg, rgba(7, 20, 42, 0.98), rgba(5, 16, 34, 0.98));
-    border: 1px solid rgba(231, 243, 255, 0.56);
+    border: 1px solid var(--line-soft);
     border-radius: 16px;
     min-height: 102px;
     padding: 14px 18px;
@@ -620,7 +620,7 @@ body {
 
 .workflow-label {
     display: block;
-    color: #7ed5f3;
+    color: var(--accent);
     font-size: 0.74rem;
     letter-spacing: 0.16em;
     font-weight: 700;
