@@ -26,8 +26,8 @@ app.config['PATIENT_RECORDS_FILE'] = os.getenv('PATIENT_RECORDS_FILE', 'records/
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(Path(app.config['PATIENT_RECORDS_FILE']).parent, exist_ok=True)
 
-AUTH_USERNAME = os.getenv('APP_USERNAME', 'admin')
-AUTH_PASSWORD = os.getenv('APP_PASSWORD', 'admin123')
+AUTH_USERNAME = os.getenv('APP_USERNAME', 'host')
+AUTH_PASSWORD = os.getenv('APP_PASSWORD', 'host123')
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
