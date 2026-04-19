@@ -16,6 +16,7 @@ def check_python_version():
         print("❌ Python 3.8+ is required")
         sys.exit(1)
     print(f"✓ Python {sys.version_info.major}.{sys.version_info.minor} detected")
+    print(f"✓ Interpreter: {sys.executable}")
 
 def check_models():
     """Check if required models exist"""
@@ -50,7 +51,11 @@ def check_dependencies():
     
     if missing:
         print(f"⚠️  Missing packages: {', '.join(missing)}")
-        print("   Run: pip install -r requirements.txt -r requirements_web.txt")
+        print("   This Python installation does not have the web dependencies installed.")
+        print("   Install them with:")
+        print(f"   {sys.executable} -m pip install -r requirements.txt -r requirements_web.txt")
+        print("   Then start the app with:")
+        print("   py run_app.py")
         return False
     
     print("✓ All required packages installed")
@@ -84,22 +89,32 @@ def main():
         print("\n⚠️  Warning: Some models are missing")
         print("   The app may have limited functionality")
     
-    # Check port
-    port = 5000
+    # Match app.py default port
+    port = int(os.getenv('APP_PORT', '5001'))
     if not is_port_available(port):
         print(f"\n⚠️  Port {port} is already in use")
         print("   Close other applications or use a different port")
+        sys.exit(1)
     
     print("\n" + "="*50)
     print("  Starting Flask Server...")
     print("="*50)
-    print("\n📍 Server will start at: http://localhost:5000")
+    print(f"\n📍 Server will start at: http://localhost:{port}")
     print("   (Browser will open automatically when ready)\n")
     
     # Start Flask app
     try:
         import app as flask_app
-        # This line won't be reached since app.py has run()
+
+        # Load models once before serving requests
+        flask_app.classification_model = flask_app.load_classification_model()
+        flask_app.segmentation_model = flask_app.load_segmentation_model()
+
+        print("\n✓ Flask app initialized")
+        print(f"✓ Classification model: {'Loaded' if flask_app.classification_model else 'Not loaded'}")
+        print(f"✓ Segmentation model: {'Loaded' if flask_app.segmentation_model else 'Not loaded'}")
+
+        flask_app.app.run(debug=False, host='127.0.0.1', port=port, threaded=True)
     except KeyboardInterrupt:
         print("\n\n✓ Server stopped by user")
         sys.exit(0)
