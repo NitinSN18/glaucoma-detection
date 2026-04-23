@@ -13,7 +13,7 @@ The classification path gives a direct diagnostic label, while segmentation supp
 
 ### 1. Classification
 
-- Model: EfficientNet-B0 (PyTorch)
+- Model: EfficientNet-B4 (PyTorch)
 - Training script: `train.py`
 - Inference script: `predict.py`
 - Classes: `glaucoma`, `normal`
@@ -93,6 +93,19 @@ Then run the scripts with `python`, not the system `python3`, so the installed p
 ```bash
 python train.py
 ```
+
+### Inspect classification model layer/neuron counts (EfficientNet-B4)
+
+```bash
+python inspect_classification_model.py
+```
+
+This prints:
+- model summary (`print(model)` for PyTorch)
+- include-top equivalent status
+- top-level model layer count
+- internal EfficientNet-B4 module count
+- Linear head units (Dense-equivalent) and output units (`num_classes`)
 
 ### Run classifier on one image
 
